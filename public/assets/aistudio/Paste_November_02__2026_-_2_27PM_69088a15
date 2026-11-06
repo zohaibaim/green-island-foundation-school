@@ -1,0 +1,1590 @@
+# MASTER PROJECT PROMPT
+# GREEN ISLAND FOUNDATION SCHOOL
+## Complete Student Portfolio, Academic Records & Daily Monitoring Management System
+
+---
+
+# 1. ROLE AND DEVELOPMENT OBJECTIVE
+
+Act as a senior full-stack software developer, database architect, UI/UX designer, school management system specialist, and software testing engineer.
+
+Your task is to DESIGN, DEVELOP, IMPLEMENT, AND DEPLOY a complete, professional, secure, responsive, online Student Portfolio & Daily Monitoring Management System for:
+
+**GREEN ISLAND FOUNDATION SCHOOL**
+
+The software must maintain a complete digital portfolio of every student from admission until graduation or leaving the school.
+
+The system must allow administrators, principals, class teachers, and subject teachers to monitor students':
+
+- Personal information.
+- Academic performance.
+- Monthly tests.
+- Weekly tests.
+- Mid-term examinations.
+- Final-term examinations.
+- Annual examinations.
+- Daily attendance.
+- Subject-wise books and notebooks.
+- Homework and classwork.
+- Health and hygiene.
+- School uniform.
+- Discipline and complaints.
+- Teacher observations.
+- Suggestions and improvement plans.
+- Parent communication.
+- Co-curricular activities.
+- Overall student progress.
+
+**MOST IMPORTANT OBJECTIVE:**
+
+The system must automatically identify students who need academic support, disciplinary attention, attendance monitoring, or parent involvement.
+
+It must maintain a complete historical record of every student.
+
+Do not create merely a static dashboard or frontend demonstration. Develop a fully functional application with a real online database, authentication, file storage, working forms, automatic calculations, alerts, and reports.
+
+# 2. EXISTING PROJECT OR NEW DEVELOPMENT
+
+Follow these instructions carefully.
+
+FIRST, determine whether an existing project is available.
+
+**Scenario A: Existing Project Available**
+
+If existing project files or a working application are provided:
+
+1. Inspect all HTML, CSS, JavaScript and other project files.
+2. Inspect the existing database structure.
+3. Inspect authentication and user permissions.
+4. Understand existing modules and functionality.
+5. Create a backup and migration plan.
+6. Preserve all existing student records.
+7. Preserve the existing school branding and design wherever possible.
+8. Upgrade the existing application by adding missing functionality.
+9. Do not unnecessarily recreate existing working modules.
+10. Never delete, overwrite, or damage existing data.
+
+**Scenario B: No Existing Project Available**
+
+Build the entire application from scratch, implementing all requirements in this master prompt.
+
+In both scenarios, the final result must include every module described below.
+
+# 3. TECHNOLOGY STACK
+
+Use a practical, reliable, free-tier-friendly technology stack.
+
+Frontend:
+- HTML5.
+- CSS3.
+- JavaScript (ES6+).
+- Bootstrap 5 or modern responsive CSS.
+- Chart.js for charts and graphs.
+- SheetJS for Excel import/export.
+- jsPDF or an equivalent reliable PDF library.
+
+Backend and Database:
+- Supabase.
+- PostgreSQL database.
+- Supabase Authentication.
+- Supabase Storage.
+- PostgreSQL Row Level Security (RLS).
+- Database functions and triggers where appropriate.
+
+Deployment:
+- GitHub for source code.
+- GitHub Pages or another suitable free static hosting service.
+- Supabase free tier for database, authentication and file storage.
+
+The application must work on:
+- Desktop computers.
+- Laptops.
+- Tablets.
+- Android mobile phones.
+- iPhones.
+
+Use a modular and maintainable project architecture.
+
+Never expose Supabase service-role keys, administrative credentials, or private secrets in frontend JavaScript.
+
+Important: Check current free-tier limitations before deployment. Design the application so that it can be migrated to another hosting or database service if necessary.
+
+# 4. SCHOOL BRANDING AND LOGIN SYSTEM
+
+Display prominently:
+
+GREEN ISLAND FOUNDATION SCHOOL
+
+Subtitle:
+
+Student Portfolio, Academic Records & Daily Monitoring Management System
+
+Design requirements:
+- Professional school-themed interface.
+- Green and white colour combination.
+- School logo support.
+- Professional dashboard.
+- Responsive sidebar navigation.
+- User profile and logout.
+- Secure login.
+- Role-based access.
+
+Provide five user roles:
+
+1. Administrator.
+2. Principal.
+3. Class Teacher.
+4. Subject Teacher.
+5. General User.
+
+Each user must have an individual account and appropriate permissions.
+
+# 5. MAIN DASHBOARD
+
+Create a professional dashboard showing:
+
+School Statistics:
+- Total students.
+- Total active students.
+- Total teachers.
+- Total classes.
+- Total sections.
+- Total subjects.
+
+Daily Statistics:
+- Students present today.
+- Students absent today.
+- Students on leave.
+- Late arrivals.
+- Pending attendance verification.
+
+Academic Statistics:
+- Students below 60% in any subject.
+- Students requiring academic improvement.
+- Class-wise examination performance.
+- Subject-wise average marks.
+
+Discipline Statistics:
+- Pending complaints.
+- Repeated complaints.
+- Students with three or more complaints in the same category.
+
+Attendance Alerts:
+- Students absent for two or more consecutive working days.
+
+Books and Notebooks Alerts:
+- Students who have failed to bring books or notebooks three or more times in the same subject during one school week.
+
+Create a dedicated and prominent dashboard section:
+
+**STUDENTS REQUIRING PARENT CONTACT**
+
+Display students with active alerts, their class, roll number, alert reason, and current follow-up status.
+
+All dashboard statistics must be calculated from actual database records.
+
+# 6. CLASS AND SECTION MANAGEMENT
+
+Create the following default regular classes:
+
+- Class I.
+- Class II.
+- Class III.
+- Class IV.
+- Class V.
+- Class VI.
+- Class VII.
+- Class VIII.
+- Class IX.
+- Class X.
+
+Each regular class must have:
+
+- Section A.
+- Section B.
+- Section C.
+- Section D.
+
+Create separate O Level categories:
+
+- O Level 1.
+- O Level 2.
+
+Allow administrators to add sections to O Level classes.
+
+Administrator permissions:
+- Add classes.
+- Edit classes.
+- Rename classes.
+- Deactivate classes.
+- Add sections.
+- Edit sections.
+- Deactivate sections.
+- Manage academic years.
+- Promote students to the next class.
+
+Maintain previous class and section history when students are promoted.
+
+A student must belong to one active class and section at a time.
+
+# 7. STUDENT REGISTRATION AND PERSONAL PROFILE
+
+Create a separate digital portfolio for every student.
+
+Student information fields:
+
+Personal Details:
+- Student photograph.
+- Full name.
+- Admission number.
+- Roll number.
+- Date of birth.
+- Gender.
+- Admission date.
+- Academic year.
+- Class.
+- Section.
+- Previous school.
+
+Family Details:
+- Father's name.
+- Mother's name.
+- Guardian name.
+- Parent contact number.
+- Alternative contact number.
+- Emergency contact.
+- Home address.
+
+Additional Details:
+- Medical information relevant to school care.
+- Special educational requirements.
+- Important remarks.
+- Student status (Active, Inactive, Transferred, Graduated).
+
+Allow authorized users to add, edit, and upload information according to their permissions.
+
+Provide student search by:
+- Name.
+- Admission number.
+- Roll number.
+- Class.
+- Section.
+
+Provide a quick navigation process:
+
+Select Class → Select Section → Enter Roll Number → Open Student Profile.
+
+Every student must have a permanent unique identification number.
+
+# 8. INDIVIDUAL STUDENT PORTFOLIO
+
+Create a complete student profile with the following tabs:
+
+1. Personal Information.
+2. Academic Records.
+3. Monthly Test Results.
+4. Weekly Test Results.
+5. Mid-Term Examination.
+6. Final-Term Examination.
+7. Annual Examination.
+8. Attendance History.
+9. Subject-Wise Monitoring.
+10. Books and Notebooks.
+11. Homework and Classwork.
+12. Health and Hygiene.
+13. Uniform Monitoring.
+14. Complaints and Discipline.
+15. Repeated Complaint Alerts.
+16. Academic Improvement Alerts.
+17. Daily Teacher Observations.
+18. Daily Activities.
+19. Parent Meeting Records.
+20. Uploaded Documents.
+21. Annual Progress Report.
+22. Complete Student History.
+
+At the top of the student profile, display a prominent alert panel whenever the student has any active warning.
+
+Example:
+
+STUDENT REQUIRES ATTENTION
+
+- Mathematics: 45% in Mid-Term.
+- Attendance: Absent for 3 consecutive working days.
+- English Notebook: Missing 3 times this week.
+- Discipline: 3 repeated complaints.
+
+A student may have multiple alerts simultaneously.
+
+Never hide historical alerts simply because an issue has been resolved.
+
+# 9. COMPLETE ACADEMIC RECORD AND EXAMINATION MANAGEMENT
+
+This is one of the most important modules.
+
+Create a complete examination and academic assessment management system.
+
+Examination categories:
+
+1. Monthly Tests.
+2. Weekly Tests.
+3. First Term Examination.
+4. Mid-Term Examination.
+5. Second Term Examination.
+6. Final Term Examination.
+7. Annual Examination.
+8. Class Assessments.
+9. Subject Assignments.
+10. Custom Examinations.
+
+Allow administrators to create additional examination types.
+
+Examination entry fields:
+
+- Academic year.
+- Class.
+- Section.
+- Examination name.
+- Examination type.
+- Examination date.
+- Subject.
+- Subject teacher.
+- Student roll number.
+- Student name.
+- Total marks.
+- Obtained marks.
+- Percentage.
+- Grade.
+- Teacher remarks.
+
+Provide two methods of marks entry:
+
+A. Individual student marks entry.
+
+B. Spreadsheet-style bulk marks entry for an entire class.
+
+Example:
+
+| Roll No. | Student | English /100 | Maths /100 | Computer /100 |
+|---|---|---:|---:|---:|
+| 01 | Student A | 75 | 45 | 80 |
+| 02 | Student B | 55 | 85 | 92 |
+| 03 | Student C | 65 | 72 | 58 |
+
+Automatically calculate:
+
+- Subject-wise percentages.
+- Total obtained marks.
+- Total maximum marks.
+- Overall percentage.
+- Grades.
+- Subject-wise performance.
+- Class average.
+- Subject average.
+- Highest marks.
+- Lowest marks.
+
+Do not calculate missing marks as zero.
+
+Allow authorized teachers to edit marks and maintain a complete edit history.
+
+## 9.1 AUTOMATIC LOW MARKS ALERT
+
+VERY IMPORTANT:
+
+Whenever a student obtains LESS THAN 60% in any subject, automatically highlight that result in RED.
+
+Default grading system:
+
+- 90–100%: Excellent.
+- 80–89%: Very Good.
+- 70–79%: Good.
+- 60–69%: Satisfactory.
+- Below 60%: Needs Improvement.
+
+The administrator must be able to configure the low-marks threshold and grading rules.
+
+Automatically display low-marks alerts in:
+
+- Student profile.
+- Academic dashboard.
+- Examination results.
+- Subject-wise reports.
+- Academic improvement reports.
+- Students Requiring Attention list.
+
+Create a separate report:
+
+**STUDENTS REQUIRING ACADEMIC ATTENTION**
+
+Display:
+
+- Student name.
+- Roll number.
+- Class and section.
+- Subject.
+- Examination name.
+- Obtained marks.
+- Total marks.
+- Percentage.
+- Subject teacher.
+- Examination date.
+
+# 10. AUTOMATIC DAILY ATTENDANCE MANAGEMENT
+
+Create a complete attendance management system.
+
+Attendance options:
+
+- Present.
+- Absent.
+- Late.
+- Leave.
+- Half Day.
+
+Attendance information:
+
+- Date.
+- Student name.
+- Roll number.
+- Class.
+- Section.
+- Status.
+- Arrival time.
+- Late arrival duration.
+- Reason for absence.
+- Teacher remarks.
+
+## 10.1 DEFAULT PRESENT SYSTEM
+
+The system must automatically generate attendance records for every active student on configured school working days.
+
+Default status: PRESENT.
+
+However, the attendance record must remain marked as pending verification until the authorized teacher verifies and finalizes the class attendance.
+
+Teachers should only need to change the status of students who are absent, late, on leave, or half-day.
+
+Important rules:
+
+- Do not generate attendance on weekends.
+- Do not generate attendance on holidays.
+- Allow administrators to configure working days.
+- Allow administrators to manage holidays and school-closed dates.
+- Prevent duplicate attendance records.
+- Maintain attendance edit history.
+- Do not overwrite finalized records without authorized correction.
+- Show classes with pending attendance verification.
+- Approved leave must be distinguishable from unexplained absence.
+
+## 10.2 AUTOMATIC CONSECUTIVE ABSENCE ALERT
+
+VERY IMPORTANT:
+
+If a student is absent for TWO OR MORE CONSECUTIVE SCHOOL WORKING DAYS, automatically generate an ORANGE ALERT.
+
+Display:
+
+CONSECUTIVE ABSENCE ALERT – PARENT CONTACT REQUIRED
+
+Information:
+
+- Student name.
+- Roll number.
+- Class and section.
+- First absent date.
+- Number of consecutive absent days.
+- Last attendance date.
+- Parent contact number.
+- Class teacher.
+
+Create a separate dashboard section:
+
+STUDENTS ABSENT FOR 2 OR MORE DAYS.
+
+Count only consecutive actual school working days.
+
+Approved leave must be displayed separately and must not automatically be treated as unexplained absence.
+
+# 11. SUBJECT-WISE BOOKS, NOTEBOOKS AND DAILY CLASSWORK TRACKING
+
+Create a daily subject-wise monitoring module.
+
+Every subject teacher must be able to record:
+
+- Textbook brought.
+- Notebook brought.
+- Homework completed.
+- Classwork completed.
+- Assignment completed.
+- Required material brought.
+- Other subject-specific observations.
+
+Use simple options:
+
+- Yes.
+- No.
+- Not Applicable.
+
+Example:
+
+| Subject | Book | Notebook | Homework | Classwork |
+|---|---|---|---|---|
+| Mathematics | Yes | No | Yes | Yes |
+| English | Yes | Yes | No | Yes |
+| Computer | Yes | Yes | Yes | Yes |
+
+Allow teachers to add remarks.
+
+## 11.1 AUTOMATIC REPEATED NOTEBOOK AND BOOK ALERT
+
+VERY IMPORTANT:
+
+If a student does not bring a required notebook or textbook MORE THAN TWO TIMES IN ONE SCHOOL WEEK IN THE SAME SUBJECT, automatically generate an ORANGE ALERT.
+
+Example:
+
+| Day | Subject | Notebook |
+|---|---|---|
+| Monday | Mathematics | No |
+| Tuesday | Mathematics | Yes |
+| Wednesday | Mathematics | No |
+| Thursday | Mathematics | Yes |
+| Friday | Mathematics | No |
+
+The student has failed to bring the Mathematics notebook three times.
+
+Generate:
+
+REPEATED NOTEBOOK ISSUE – PARENT ATTENTION REQUIRED.
+
+Display:
+
+- Student name.
+- Roll number.
+- Class and section.
+- Subject.
+- Number of missing records.
+- Dates of missing notebooks.
+- Subject teacher.
+- Class teacher.
+
+Apply the same logic to textbooks and other compulsory materials.
+
+Rules:
+
+- Count separately for each subject.
+- Count only school working days.
+- Reset the count for each new school week.
+- Do not count Not Applicable entries.
+- Do not count unrecorded entries.
+- Do not count duplicate daily records.
+- Maintain the complete historical record.
+
+# 12. STUDENT COMPLAINT AND DISCIPLINE MANAGEMENT
+
+Create a detailed complaint and discipline module.
+
+Authorized subject teachers and class teachers can submit complaints.
+
+Complaint categories:
+
+1. Misbehaviour.
+2. Fighting.
+3. Bullying.
+4. Disrespectful behaviour.
+5. Classroom disturbance.
+6. Homework not completed.
+7. Notebook not brought.
+8. Textbook not brought.
+9. Uniform violation.
+10. Late coming.
+11. Mobile phone misuse.
+12. Inappropriate language.
+13. Academic negligence.
+14. Other complaints.
+
+Complaint form:
+
+- Complaint date.
+- Student name.
+- Roll number.
+- Class and section.
+- Reporting teacher.
+- Subject, if applicable.
+- Complaint category.
+- Detailed description.
+- Supporting photograph or document.
+- Action taken.
+- Follow-up remarks.
+- Principal remarks.
+- Follow-up date.
+- Current status.
+
+Complaint statuses:
+
+- Pending.
+- Under Review.
+- Resolved.
+- Parent Contacted.
+
+## 12.1 AUTOMATIC REPEATED COMPLAINT ALERT
+
+VERY IMPORTANT:
+
+Track complaints for the same student under the SAME complaint category.
+
+Rules:
+
+- First complaint: Normal record.
+- Second complaint: Repeated complaint warning.
+- Third complaint: Automatically highlight the student profile.
+
+Generate a RED ALERT:
+
+THREE REPEATED COMPLAINTS – PARENT MEETING RECOMMENDED.
+
+Display:
+
+- Student name.
+- Roll number.
+- Class and section.
+- Complaint category.
+- Total complaints.
+- Dates of complaints.
+- Reporting teachers.
+- Previous actions.
+- Class teacher remarks.
+- Parent meeting status.
+
+Important:
+
+- Different complaint categories must not be combined.
+- Keep all historical complaints.
+- Resolving a complaint must not delete its history.
+- Resolving a complaint must not reset the repeated complaint count.
+- Allow authorized staff to record parent communication.
+- Make the counting period configurable, with the default covering the current academic year.
+
+# 13. CENTRALIZED STUDENT ALERT SYSTEM
+
+Create ONE centralized alert engine.
+
+The system must automatically calculate and update student alerts using actual saved database records.
+
+## RED ALERT
+
+Trigger when:
+
+- Any subject result is below 60%.
+- Three or more complaints occur in the same category.
+
+## ORANGE ALERT
+
+Trigger when:
+
+- Student has two or more consecutive unexplained absences.
+- Student misses a notebook three or more times in one subject during one school week.
+- Student misses a textbook three or more times in one subject during one school week.
+- Other administrator-configured repeated concerns occur.
+
+## GREEN STATUS
+
+Display when a student has no currently active alerts.
+
+A student may have multiple alert categories simultaneously.
+
+Every alert must contain:
+
+- Student identification.
+- Alert category.
+- Alert description.
+- Trigger date.
+- Related records.
+- Alert status.
+- Assigned responsible teacher.
+- Parent contact status.
+- Follow-up date.
+- Resolution information.
+
+Do not permanently delete alerts when they are resolved.
+
+Create a dedicated dashboard:
+
+STUDENTS REQUIRING PARENT CONTACT.
+
+Allow authorized teachers and administrators to:
+
+- Open the student profile.
+- Mark parent contacted: Yes/No.
+- Schedule parent meeting.
+- Record meeting date.
+- Record parent feedback.
+- Create an action plan.
+- Set follow-up date.
+- Update current status.
+
+Maintain the complete parent communication history.
+
+# 14. DAILY HEALTH, HYGIENE AND UNIFORM MONITORING
+
+Create a daily checklist.
+
+Personal Hygiene:
+
+- Nails properly trimmed.
+- Hair properly maintained.
+- Haircut according to school rules.
+- Personal cleanliness.
+- General hygiene.
+
+School Uniform:
+
+- Proper uniform.
+- Clean uniform.
+- Proper shoes.
+- Proper socks.
+- School belt.
+- School tie, if applicable.
+- School badge.
+- Overall appearance.
+
+Each item must have:
+
+- Satisfactory.
+- Needs Improvement.
+- Not Applicable.
+
+Allow teachers to add comments and upload photographs where necessary.
+
+Maintain historical records.
+
+# 15. DAILY TEACHER OBSERVATIONS AND SUGGESTIONS
+
+Create a teacher observation module.
+
+Record:
+
+- Positive behaviour.
+- Academic improvement.
+- Academic weaknesses.
+- Classroom participation.
+- Social interaction.
+- Leadership qualities.
+- Discipline.
+- Special achievements.
+- Areas requiring attention.
+- Suggestions for improvement.
+
+Provide separate fields for:
+
+1. Positive remarks.
+2. Improvement suggestions.
+3. Teacher observations.
+4. Recommended action.
+
+Maintain a dated history of every observation.
+
+# 16. DAILY STUDENT ACTIVITY TRACKING
+
+Create a complete daily activity log.
+
+Include:
+
+- Attendance.
+- Subject-wise books and copies.
+- Classwork.
+- Homework.
+- Tests and quizzes.
+- Classroom participation.
+- Discipline.
+- Health and hygiene.
+- Uniform.
+- Sports.
+- Co-curricular activities.
+- Library activities.
+- Special achievements.
+- Teacher observations.
+
+All entries must automatically appear in the relevant student's portfolio.
+
+# 17. BULK STUDENT REGISTRATION THROUGH EXCEL
+
+This feature is extremely important because the school may have hundreds of students.
+
+Create a dedicated module:
+
+IMPORT STUDENTS FROM EXCEL.
+
+Supported formats:
+
+- XLSX.
+- XLS.
+- CSV.
+
+Import process:
+
+Step 1: Select academic year.
+
+Step 2: Select class.
+
+Step 3: Select section.
+
+Step 4: Upload Excel file.
+
+Step 5: Automatically read Excel columns.
+
+Step 6: Match Excel columns with database fields.
+
+Step 7: Display student preview.
+
+Step 8: Validate missing information.
+
+Step 9: Detect duplicate roll numbers and admission numbers.
+
+Step 10: Display import summary.
+
+Step 11: Confirm import.
+
+Step 12: Save student records in the online database.
+
+Sample Excel format:
+
+| Roll No. | Student Name | Father Name | DOB | Gender | Contact | Address |
+|---|---|---|---|---|---|---|
+| 01 | Ali Ahmed | Ahmed Khan | 2014-05-12 | Male | 03000000000 | Karachi |
+| 02 | Sara Ahmed | Imran Ahmed | 2014-08-15 | Female | 03000000001 | Karachi |
+
+Additional features:
+
+- Downloadable Excel template.
+- Bulk registration of hundreds of students.
+- Separate imports for different classes.
+- Duplicate detection.
+- Existing student identification.
+- Preview before importing.
+- Import error reporting.
+- Rejected record reporting.
+- Correction and re-upload.
+- Optional update of existing records after confirmation.
+- Import history.
+
+Never create duplicate student profiles.
+
+After successful registration, automatically create an individual student portfolio.
+
+# 18. DOCUMENT AND FILE MANAGEMENT
+
+Allow authorized users to upload:
+
+- PDF files.
+- Word documents.
+- Excel files.
+- Student photographs.
+- Certificates.
+- Assignments.
+- Examination results.
+- Supporting images.
+
+Organize documents by:
+
+- Academic year.
+- Class.
+- Section.
+- Student.
+- Subject.
+- Document category.
+
+Provide:
+
+- View.
+- Download.
+- Print.
+- Replace with authorization.
+- Document history.
+
+Use secure cloud storage with appropriate access permissions.
+
+# 19. PARENT MEETING AND FOLLOW-UP MANAGEMENT
+
+Create a dedicated parent communication module.
+
+Record:
+
+- Student name.
+- Parent name.
+- Contact number.
+- Meeting date.
+- Meeting reason.
+- Related alert.
+- Teacher attending.
+- Principal remarks.
+- Parent feedback.
+- Agreed action plan.
+- Follow-up date.
+- Meeting status.
+
+Maintain a complete history of parent meetings and telephone contacts.
+
+Link parent meeting records to the corresponding student alerts.
+
+# 20. FIVE USER ROLES AND DETAILED PERMISSIONS
+
+Implement five separate roles.
+
+All permissions must be enforced through backend/database security, not merely by hiding interface buttons.
+
+## A. ADMINISTRATOR
+
+Full system access.
+
+Can:
+
+- Create and manage teacher accounts.
+- Create and manage staff accounts.
+- Manage students.
+- Import students through Excel.
+- Manage classes and sections.
+- Manage academic years.
+- Manage subjects.
+- Manage examination types.
+- Manage examinations and marks.
+- Manage attendance.
+- Manage complaints.
+- Manage student alerts.
+- Manage parent meetings.
+- Manage documents.
+- Manage all reports.
+- Assign class teachers.
+- Assign subject teachers.
+- Manage permissions.
+- Configure system settings.
+- Manage database-related application settings.
+- View all student records.
+
+## B. PRINCIPAL
+
+School-wide monitoring and reporting access.
+
+Can:
+
+- View all classes and sections.
+- View all student profiles.
+- View all academic results.
+- View attendance.
+- View complaints.
+- View all student alerts.
+- Review repeated complaints.
+- Review parent meeting records.
+- Monitor teacher reporting activity.
+- Generate school-wide reports.
+- Add principal remarks.
+- Review important records.
+- Approve or review authorized records.
+
+Cannot automatically manage administrator accounts, security settings, or database configuration.
+
+## C. CLASS TEACHER
+
+Access to assigned classes.
+
+Can:
+
+- Add students to assigned classes.
+- Edit student details within permissions.
+- Import student records for assigned classes.
+- Manage student personal information.
+- Mark and correct attendance.
+- Monitor all subjects of assigned students.
+- Record notebooks and books.
+- Record homework and classwork.
+- Record hygiene and uniform.
+- Submit complaints.
+- Add daily observations.
+- Add improvement suggestions.
+- View academic records.
+- Enter examination marks where authorized.
+- View student alerts.
+- Record parent meetings.
+- Generate student reports.
+- Generate class reports.
+
+Cannot manage system security, administrator accounts, or other teachers' accounts.
+
+## D. SUBJECT TEACHER
+
+Access only to assigned classes and subjects.
+
+Can:
+
+- Select assigned class.
+- Select assigned section.
+- Search students by roll number.
+- View basic student information.
+- Record subject-wise books and notebooks.
+- Record homework.
+- Record classwork.
+- Record assignments.
+- Submit subject-related complaints.
+- Add subject-related observations.
+- Enter examination marks for assigned subjects.
+- Upload subject-related documents.
+- View permitted academic results.
+
+STRICT RESTRICTIONS:
+
+Cannot:
+
+- Create student profiles.
+- Delete student profiles.
+- Edit personal information.
+- Change roll numbers.
+- Change classes or sections.
+- Import students.
+- Create teacher accounts.
+- Access administrator settings.
+- Edit other teachers' records.
+- Access unrelated subjects.
+
+## E. GENERAL USER
+
+Provide configurable read-only access.
+
+Administrator can select which information this role can view.
+
+No editing, deleting, importing, or administrative permissions by default.
+
+# 21. TEACHER ASSIGNMENT MANAGEMENT
+
+Create a dedicated teacher assignment module.
+
+Allow administrators to:
+
+- Register teachers.
+- Assign class teachers.
+- Assign subject teachers.
+- Assign multiple subjects to teachers.
+- Assign teachers to multiple classes.
+- Manage teaching assignments.
+- Change assignments.
+- View teacher activity.
+
+Every record must automatically store:
+
+- Created by.
+- Created date.
+- Last modified by.
+- Last modified date.
+
+# 22. ADVANCED SEARCH AND FILTER SYSTEM
+
+Provide global student search and module-specific filters.
+
+Search by:
+
+- Student name.
+- Roll number.
+- Admission number.
+- Class.
+- Section.
+- Academic year.
+- Subject.
+- Examination.
+- Complaint category.
+- Alert category.
+- Attendance status.
+
+Allow date-range filters.
+
+All important lists should support sorting and pagination.
+
+# 23. COMPLETE REPORTING AND PDF GENERATION SYSTEM
+
+Create professional reports with:
+
+- School name.
+- School logo.
+- Student photograph where relevant.
+- Report title.
+- Academic year.
+- Date.
+- Student identification.
+- Class and section.
+- Report details.
+- Header and footer.
+- Page numbers where appropriate.
+
+Required reports:
+
+1. Complete Individual Student Portfolio.
+2. Monthly Academic Report.
+3. Weekly Test Report.
+4. First Term Examination Report.
+5. Mid-Term Examination Report.
+6. Final-Term Examination Report.
+7. Annual Academic Report.
+8. Subject-Wise Result Report.
+9. Students Below 60% Report.
+10. Daily Attendance Report.
+11. Monthly Attendance Report.
+12. Annual Attendance Report.
+13. Consecutive Absence Report.
+14. Repeated Notebook Missing Report.
+15. Repeated Textbook Missing Report.
+16. Repeated Complaint Report.
+17. Parent Meeting Report.
+18. Class-Wise Student Performance Report.
+19. Subject-Wise Performance Report.
+20. Students Requiring Attention Report.
+21. Hygiene and Uniform Report.
+22. Teacher Observation Report.
+23. Daily Activity Report.
+
+Report functionality:
+
+- PDF download.
+- Print.
+- Excel export where appropriate.
+- Class filtering.
+- Section filtering.
+- Date filtering.
+- Academic year filtering.
+- Subject filtering.
+
+All reports must use actual database information.
+
+# 24. CHARTS AND ANALYTICS
+
+Use Chart.js or equivalent.
+
+Create visual analytics for:
+
+- Class-wise student performance.
+- Subject-wise average marks.
+- Examination comparisons.
+- Monthly academic improvement.
+- Attendance percentages.
+- Monthly absences.
+- Repeated complaints.
+- Students requiring attention.
+
+Allow authorized users to filter charts by academic year, class, section, subject, and examination.
+
+# 25. DATABASE ARCHITECTURE
+
+Design a normalized relational database.
+
+Create or update the following tables as required:
+
+1. Profiles / Users.
+2. User Roles.
+3. Permissions.
+4. Classes.
+5. Sections.
+6. Academic Years.
+7. Students.
+8. Student Class History.
+9. Subjects.
+10. Teacher Assignments.
+11. Examination Types.
+12. Examinations.
+13. Examination Subjects.
+14. Student Marks.
+15. Attendance.
+16. School Working Days.
+17. Holidays.
+18. Daily Subject Monitoring.
+19. Books and Notebooks Records.
+20. Student Complaints.
+21. Complaint Categories.
+22. Teacher Observations.
+23. Health and Hygiene Records.
+24. Uniform Records.
+25. Daily Activities.
+26. Student Alerts.
+27. Parent Meetings.
+28. Uploaded Documents.
+29. Excel Import History.
+30. Record Edit History.
+31. System Settings.
+
+Use:
+
+- Primary keys.
+- Foreign keys.
+- Appropriate indexes.
+- Unique constraints.
+- Database transactions.
+- Referential integrity.
+- Row Level Security.
+- Audit logs.
+
+All alert calculations and important business rules must be reliable and must not depend solely on frontend JavaScript.
+
+Use PostgreSQL functions, triggers, scheduled processes, or secure backend functions where appropriate.
+
+Ensure multiple teachers can enter records simultaneously without accidental overwriting.
+
+# 26. AUTOMATIC ALERT ENGINE
+
+Develop a centralized and reliable alert engine.
+
+It must evaluate:
+
+1. Subject marks below 60%.
+2. Two or more consecutive unexplained absences.
+3. Three or more missing notebooks in one subject per school week.
+4. Three or more missing textbooks in one subject per school week.
+5. Three or more complaints in the same category.
+6. Additional administrator-configured conditions.
+
+The alert engine must:
+
+- Recalculate when relevant records are added or edited.
+- Prevent duplicate active alerts for the same condition.
+- Maintain historical alerts.
+- Support multiple simultaneous alerts.
+- Update alert status when conditions change.
+- Preserve original records.
+- Maintain alert creation and resolution dates.
+- Record responsible teachers.
+- Maintain parent contact history.
+
+Never create false alerts from incomplete records or unverified attendance.
+
+# 27. DATA SECURITY AND BACKUP
+
+Protect student and family information.
+
+Requirements:
+
+- Secure authentication.
+- Role-based access.
+- Database-level permissions.
+- Row Level Security.
+- Secure file storage.
+- Input validation.
+- Protection against unauthorized access.
+- Audit logs.
+- Secure password management.
+- Backup and recovery strategy.
+- Database migration history.
+- Session management.
+
+Do not use browser local storage as the primary database.
+
+Local storage may only be used for harmless preferences or temporary interface settings.
+
+Ensure private student records cannot be accessed through public file URLs or unauthorized database requests.
+
+# 28. DESIGN AND USER EXPERIENCE
+
+Use a modern professional school management interface.
+
+Colour scheme:
+
+- Primary: Green.
+- Secondary: White.
+- Supporting colours: Neutral grey and carefully used alert colours.
+
+Interface requirements:
+
+- Professional sidebar.
+- Top navigation bar.
+- Dashboard summary cards.
+- Searchable tables.
+- Clear forms.
+- Responsive design.
+- Attractive student profiles.
+- Easy-to-understand English labels.
+- Consistent buttons.
+- Confirmation before destructive operations.
+- Loading indicators.
+- Success and error messages.
+- Useful empty states.
+- Mobile-friendly navigation.
+
+Alert colours:
+
+- RED: Serious academic or disciplinary concern.
+- ORANGE: Attendance or repeated daily monitoring concern.
+- GREEN: No active alerts.
+
+Avoid unnecessary animations and complicated navigation.
+
+# 29. ONLINE DEPLOYMENT – FREE OR FREE-TIER OPTIONS
+
+I want to publish this application online without purchasing a domain name or paid hosting.
+
+Use:
+
+- GitHub for source code.
+- GitHub Pages or another appropriate free hosting platform.
+- Supabase free tier for database, authentication and storage.
+
+Example free hosting address:
+
+green-island-foundation-school.github.io
+
+Provide complete setup instructions for:
+
+1. Creating the project.
+2. Creating the GitHub account.
+3. Creating the Supabase project.
+4. Creating the database tables.
+5. Running SQL scripts.
+6. Configuring authentication.
+7. Setting up database security.
+8. Configuring storage.
+9. Connecting the frontend.
+10. Uploading project files to GitHub.
+11. Publishing the website.
+12. Creating the administrator account securely.
+13. Adding teachers.
+14. Creating classes and sections.
+15. Adding subjects.
+16. Registering students.
+17. Importing Excel files.
+18. Using the system online.
+
+Do not require purchasing a domain.
+
+# 30. SOFTWARE DEVELOPMENT METHODOLOGY
+
+IMPORTANT: Do not attempt to develop the entire application as one unstructured block of code.
+
+Develop the software in systematic phases.
+
+**PHASE 1 – PROJECT ANALYSIS AND PLANNING**
+
+- Inspect existing project if available.
+- Create a project architecture.
+- Design database relationships.
+- Prepare a module development plan.
+- Identify security requirements.
+- Create backup and migration strategy.
+
+**PHASE 2 – DATABASE AND AUTHENTICATION**
+
+- Create database schema.
+- Configure authentication.
+- Implement user roles.
+- Configure RLS.
+- Create initial administrator account.
+- Test permissions.
+
+**PHASE 3 – CORE SCHOOL MANAGEMENT**
+
+- Dashboard.
+- Classes and sections.
+- Academic years.
+- Subjects.
+- Teacher assignments.
+- Student registration.
+- Student profiles.
+
+**PHASE 4 – DAILY MONITORING**
+
+- Attendance.
+- Books and notebooks.
+- Homework and classwork.
+- Hygiene and uniform.
+- Teacher observations.
+- Daily activities.
+
+**PHASE 5 – ACADEMIC MANAGEMENT**
+
+- Examination types.
+- Examination creation.
+- Individual marks entry.
+- Bulk marks entry.
+- Automatic calculations.
+- Grade management.
+- Low-marks alerts.
+
+**PHASE 6 – DISCIPLINE AND ALERTS**
+
+- Complaints.
+- Repeated complaint detection.
+- Consecutive absence detection.
+- Missing notebook detection.
+- Missing textbook detection.
+- Centralized student alert system.
+- Parent meeting management.
+
+**PHASE 7 – IMPORTS AND REPORTS**
+
+- Excel import.
+- Excel export.
+- PDF generation.
+- Individual portfolio reports.
+- Class reports.
+- Academic reports.
+- Attendance reports.
+- Alert reports.
+
+**PHASE 8 – FINAL TESTING AND DEPLOYMENT**
+
+- Test every module.
+- Test every user role.
+- Test database persistence.
+- Test simultaneous users.
+- Test automatic alerts.
+- Test Excel import.
+- Test PDF generation.
+- Test mobile responsiveness.
+- Deploy online.
+
+# 31. MANDATORY SOFTWARE TESTING
+
+Before declaring the software complete, perform the following tests.
+
+**Academic Testing**
+
+- Enter monthly test marks.
+- Enter mid-term marks.
+- Enter final-term marks.
+- Verify percentage calculations.
+- Verify grades.
+- Verify below-60% alerts.
+- Verify that missing marks are not treated as zero.
+
+**Attendance Testing**
+
+- Generate attendance on school working days.
+- Verify automatic Present status.
+- Verify pending verification.
+- Mark a student absent for two consecutive working days.
+- Verify the absence alert.
+- Verify holidays and weekends are excluded.
+- Verify approved leave handling.
+
+**Books and Notebooks Testing**
+
+- Record a notebook as missing three times in one week.
+- Verify the alert.
+- Test separate subject counting.
+- Test weekly reset.
+- Verify duplicate records are not counted.
+
+**Complaint Testing**
+
+- Enter three complaints in the same category.
+- Verify the warning after the second complaint.
+- Verify the RED alert after the third.
+- Enter complaints in different categories.
+- Verify that different categories are counted separately.
+- Resolve complaints and verify historical records remain.
+
+**Excel Testing**
+
+- Import multiple students.
+- Test duplicate roll numbers.
+- Test duplicate admission numbers.
+- Test missing information.
+- Test preview.
+- Test rejected records.
+- Test updating existing students.
+
+**Security Testing**
+
+- Test all five roles.
+- Verify subject teachers cannot edit personal details.
+- Verify class teachers cannot manage system accounts.
+- Verify principals cannot access administrator-only settings.
+- Verify unauthorized users cannot access private student records.
+
+**Reporting Testing**
+
+- Generate PDF reports.
+- Print reports.
+- Export Excel files.
+- Verify actual database information is displayed.
+
+# 32. FINAL DELIVERABLES
+
+Provide:
+
+1. Complete source code.
+2. Organized project folders.
+3. HTML files.
+4. CSS files.
+5. JavaScript files.
+6. Database SQL scripts.
+7. Database relationship documentation.
+8. Authentication configuration.
+9. Security and RLS policies.
+10. Database functions and triggers.
+11. File upload functionality.
+12. Excel import/export functionality.
+13. PDF generation functionality.
+14. Automatic alert engine.
+15. Reporting modules.
+16. GitHub deployment instructions.
+17. Administrator setup guide.
+18. Teacher user guide.
+19. Testing checklist.
+20. Backup and recovery instructions.
+
+Do not leave any important button non-functional.
+
+Do not use sample data for actual production operations.
+
+Sample data may be used for testing, but it must be clearly identified and removable without affecting actual student records.
+
+# 33. FINAL ACCEPTANCE CRITERIA
+
+The application will only be considered complete when:
+
+- Every student has an individual digital portfolio.
+- All student information is saved in the online database.
+- Teachers can enter daily records.
+- Administrators can manage the entire system.
+- Principals can monitor school-wide performance.
+- Subject teachers have restricted subject-wise access.
+- Class teachers can monitor their assigned students.
+- Examination records are maintained throughout the academic year.
+- Marks below 60% automatically generate alerts.
+- Two consecutive unexplained absences generate alerts.
+- Three missing notebooks or textbooks in one subject per week generate alerts.
+- Three repeated complaints in the same category generate alerts.
+- Parent meetings and follow-ups are recorded.
+- Excel import works correctly.
+- PDF and Excel reports work correctly.
+- Student history is preserved.
+- All user permissions are enforced at the database level.
+- Multiple teachers can use the system simultaneously.
+- The application works on desktop and mobile.
+- The application is accessible through its published online URL.
+- No existing student data or working functionality is lost during upgrades.
+
+# FINAL INSTRUCTION TO THE AI DEVELOPER
+
+Treat this as a complete school management and student monitoring software project, not a simple student registration website.
+
+Think like an experienced software architect.
+
+Prioritize data accuracy, security, reliability, usability, and long-term maintainability.
+
+Before writing code, inspect the available project and explain the development architecture.
+
+Then develop the application module by module.
+
+After completing each phase:
+
+1. Explain what has been developed.
+2. Provide the complete updated code.
+3. Explain how to configure it.
+4. Test its functionality.
+5. Identify any remaining issues.
+6. Proceed to the next phase.
+
+Never claim a feature is complete until it has been implemented and tested.
+
+If an external service, API, or free-tier limitation prevents a requested feature, explain the limitation and provide the best practical alternative.
+
+**ULTIMATE GOAL:**
+
+Develop GREEN ISLAND FOUNDATION SCHOOL into a complete digital student monitoring platform where every student's academic progress, attendance, discipline, daily activities, personal development, and improvement requirements can be recorded, monitored, analyzed, and reported from one secure online application.
+
+The system must automatically identify students requiring academic support or parent attention and provide school management with accurate, actionable information throughout the academic year.

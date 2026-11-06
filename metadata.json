@@ -1,0 +1,7 @@
+{
+  "name": "Green Island Foundation School - Student Portfolio & Academic Management System",
+  "description": "Complete Student Portfolio, Academic Records, Examination, Attendance & Daily Monitoring Management System for Green Island Foundation School with automated early warning alerts, parent follow-ups, Excel import, and PDF report cards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { StorageService } from '../../db/storage';
+import { syncProfileToSupabase, getSupabaseClient } from '../../db/supabaseClient';
 import { UserRole } from '../../types';
 import {
   Lock,
@@ -83,62 +84,123 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
     );
   };
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToTop = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // Handle Sign Up Submission
-  const handleSignupSubmit = (e: React.FormEvent) => {
+  const handleSignupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
     // Validation
+    const cleanName = signupName.trim();
+    const cleanEmail = signupEmail.trim().toLowerCase();
+    const cleanPhone = signupPhone.trim();
+    const cleanDesignation = signupDesignation.trim();
+
+    if (!cleanName) {
+      setErrorMsg('Please enter your full name.');
+      scrollToTop();
+      return;
+    }
+
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      setErrorMsg('Please enter a valid email address.');
+      scrollToTop();
+      return;
+    }
+
     if (signupPassword !== confirmPassword) {
       setErrorMsg('Passwords do not match. Please re-enter.');
+      scrollToTop();
       return;
     }
 
     if (signupPassword.length < 4) {
       setErrorMsg('Password should be at least 4 characters long.');
+      scrollToTop();
       return;
     }
 
     if (signupRole === 'subject_teacher' && signupSubjects.length === 0) {
       setErrorMsg('Please select at least one subject you teach.');
+      scrollToTop();
       return;
     }
 
     setIsSubmitting(true);
 
-    // Build user object
-    const assignedClasses = signupRole === 'class_teacher' ? [signupClass] : undefined;
-    const assignedSubjects =
-      signupRole === 'subject_teacher'
-        ? signupSubjects.map((s) => ({
-            classId: 'c9',
-            sectionId: 'A',
-            subjectName: s,
-          }))
-        : undefined;
+    try {
+      // Check cloud Supabase if already exists
+      const supabase = getSupabaseClient();
+      if (supabase) {
+        const { data: cloudExisting, error: cloudCheckErr } = await supabase
+          .from('profiles')
+          .select('id, email, is_approved')
+          .ilike('email', cleanEmail)
+          .maybeSingle();
 
-    const res = StorageService.registerPendingUser({
-      name: signupName.trim(),
-      email: signupEmail.trim(),
-      phone: signupPhone.trim(),
-      designation: signupDesignation.trim() || (signupRole === 'class_teacher' ? 'Class Teacher' : 'Subject Teacher'),
-      role: signupRole,
-      password: signupPassword,
-      isActive: true,
-      assignedClasses,
-      assignedSubjects,
-      selectedSubjectNames: signupRole === 'subject_teacher' ? signupSubjects : undefined,
-    });
+        if (cloudExisting && !cloudCheckErr) {
+          setIsSubmitting(false);
+          if (cloudExisting.is_approved === false) {
+            setErrorMsg('Is email se pehle hi registration request submit ho chuki hay jo Admin approval ke lye pending hay.');
+          } else {
+            setErrorMsg('Yeh email address pehle se registered hay. Please sign in karein.');
+          }
+          scrollToTop();
+          return;
+        }
+      }
 
-    setIsSubmitting(false);
+      // Build user object
+      const assignedClasses = signupRole === 'class_teacher' ? [signupClass] : undefined;
+      const assignedSubjects =
+        signupRole === 'subject_teacher'
+          ? signupSubjects.map((s) => ({
+              classId: 'c9',
+              sectionId: 'A',
+              subjectName: s,
+            }))
+          : undefined;
 
-    if (!res.success) {
-      setErrorMsg(res.error || 'Registration failed.');
-      return;
+      const res = StorageService.registerPendingUser({
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        designation: cleanDesignation || (signupRole === 'class_teacher' ? 'Class Teacher' : 'Subject Teacher'),
+        role: signupRole,
+        password: signupPassword,
+        isActive: true,
+        assignedClasses,
+        assignedSubjects,
+        selectedSubjectNames: signupRole === 'subject_teacher' ? signupSubjects : undefined,
+      });
+
+      if (!res.success) {
+        setIsSubmitting(false);
+        setErrorMsg(res.error || 'Registration failed.');
+        scrollToTop();
+        return;
+      }
+
+      if (res.user) {
+        await syncProfileToSupabase(res.user);
+      }
+
+      setIsSubmitting(false);
+      setRegisteredEmailNotice(cleanEmail);
+      setModalMode('success_pending');
+      scrollToTop();
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setErrorMsg(err?.message || 'Registration failed. Please check network.');
+      scrollToTop();
     }
-
-    setRegisteredEmailNotice(signupEmail);
-    setModalMode('success_pending');
   };
 
   const handleResetToLogin = () => {
@@ -209,7 +271,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
         </div>
 
         {/* Form Body */}
-        <div className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div ref={scrollContainerRef} className="p-5 sm:p-6 space-y-4 max-h-[75vh] overflow-y-auto">
           {targetTabAfterLogin && modalMode === 'login' && (
             <div className="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
@@ -482,13 +544,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
                 </div>
               </div>
 
+              {/* Error banner directly above the submit button for mobile viewports */}
+              {errorMsg && (
+                <div className="p-3 bg-rose-50 border border-rose-300 text-rose-900 rounded-xl text-xs flex items-start gap-2 leading-relaxed">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span className="font-bold">{errorMsg}</span>
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3 px-4 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 text-xs sm:text-sm"
               >
                 <UserPlus className="w-4 h-4" />
-                <span>{isSubmitting ? 'Submitting...' : 'Submit Registration for Approval'}</span>
+                <span>{isSubmitting ? 'Submitting Registration...' : 'Submit Registration for Approval'}</span>
               </button>
 
               <div className="pt-2 text-center border-t border-slate-100">

@@ -14,13 +14,38 @@ import {
   Shield,
   FileCode,
   CheckCircle2,
+  Globe,
+  Link2,
+  AlertTriangle,
+  KeyRound,
+  ExternalLink,
+  Unlink,
 } from 'lucide-react';
+import {
+  getSupabaseConfig,
+  saveSupabaseConfig,
+  clearSupabaseConfig,
+  testSupabaseConnection,
+} from '../../db/supabaseClient';
 
 export const SystemSettingsAndSQL: React.FC = () => {
   const { canAccessAdminSettings } = useAuth();
   const [settings, setSettings] = useState<SystemSettings>(() => StorageService.getSettings());
   const [copied, setCopied] = useState(false);
   const [saveMsg, setSaveMsg] = useState('');
+
+  // Supabase Cloud Sync State
+  const initialConfig = getSupabaseConfig();
+  const [cloudUrl, setCloudUrl] = useState(initialConfig.url);
+  const [cloudKey, setCloudKey] = useState(initialConfig.anonKey);
+  const [isCloudConnected, setIsCloudConnected] = useState(initialConfig.isConnected);
+  const [isTestingCloud, setIsTestingCloud] = useState(false);
+  const [cloudStatusMsg, setCloudStatusMsg] = useState<{ type: 'success' | 'error' | 'idle'; message: string }>({
+    type: initialConfig.isConnected ? 'success' : 'idle',
+    message: initialConfig.isConnected
+      ? 'Connected to Supabase Cloud Database. Multi-device sync is active.'
+      : '',
+  });
 
   const sqlScript = StorageService.generateSupabaseSchemaSQL();
 
@@ -45,6 +70,40 @@ export const SystemSettingsAndSQL: React.FC = () => {
     StorageService.saveSettings(settings);
     setSaveMsg('System settings and alert engine thresholds updated successfully!');
     setTimeout(() => setSaveMsg(''), 4000);
+  };
+
+  const handleTestAndSaveCloud = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cloudUrl.trim() || !cloudKey.trim()) {
+      setCloudStatusMsg({ type: 'error', message: 'Please enter both Supabase Project URL and Public Anon Key.' });
+      return;
+    }
+    setIsTestingCloud(true);
+    setCloudStatusMsg({ type: 'idle', message: 'Testing connection to Supabase cloud...' });
+
+    const result = await testSupabaseConnection(cloudUrl, cloudKey);
+    setIsTestingCloud(false);
+
+    if (result.success) {
+      saveSupabaseConfig(cloudUrl, cloudKey);
+      setIsCloudConnected(true);
+      setCloudStatusMsg({
+        type: 'success',
+        message: result.message || 'Successfully connected to Supabase! Multi-device sync is now active.',
+      });
+    } else {
+      setCloudStatusMsg({ type: 'error', message: result.message });
+    }
+  };
+
+  const handleDisconnectCloud = () => {
+    if (confirm('Are you sure you want to disconnect Supabase Cloud Database? System will fall back to local offline mode.')) {
+      clearSupabaseConfig();
+      setCloudUrl('');
+      setCloudKey('');
+      setIsCloudConnected(false);
+      setCloudStatusMsg({ type: 'idle', message: 'Disconnected from cloud database.' });
+    }
   };
 
   const handleResetData = () => {
@@ -117,6 +176,142 @@ export const SystemSettingsAndSQL: React.FC = () => {
               <span>Reset Defaults</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Supabase Cloud Database Connection (Multi-Device Online Sync) */}
+      <div className="bg-white rounded-2xl border-2 border-emerald-500/40 shadow-md p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+          <div className="flex items-center space-x-3">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow-xs ${
+              isCloudConnected ? 'bg-emerald-600' : 'bg-slate-700'
+            }`}>
+              <Globe className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900">
+                  Supabase Cloud Database & Multi-User Synchronization
+                </h3>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+                  isCloudConnected ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {isCloudConnected ? 'Cloud Sync Connected' : 'Offline / Local Mode'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                Connect your free Supabase PostgreSQL cloud database so all teachers and admins on any mobile or PC see the same data in real time.
+              </p>
+            </div>
+          </div>
+
+          {isCloudConnected && (
+            <button
+              type="button"
+              onClick={handleDisconnectCloud}
+              className="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+            >
+              <Unlink className="w-3.5 h-3.5" />
+              <span>Disconnect</span>
+            </button>
+          )}
+        </div>
+
+        {/* Status Message */}
+        {cloudStatusMsg.message && (
+          <div className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 ${
+            cloudStatusMsg.type === 'success'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+              : cloudStatusMsg.type === 'error'
+              ? 'bg-rose-50 border-rose-200 text-rose-900'
+              : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}>
+            {cloudStatusMsg.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+            ) : cloudStatusMsg.type === 'error' ? (
+              <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            ) : (
+              <RefreshCw className="w-4 h-4 text-blue-600 shrink-0 mt-0.5 animate-spin" />
+            )}
+            <span className="font-medium">{cloudStatusMsg.message}</span>
+          </div>
+        )}
+
+        {/* Connection Form */}
+        <form onSubmit={handleTestAndSaveCloud} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-slate-700 font-bold text-xs mb-1">
+                Supabase Project URL *
+              </label>
+              <div className="relative">
+                <Link2 className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="url"
+                  required
+                  placeholder="https://xyzabcdefg.supabase.co"
+                  value={cloudUrl}
+                  onChange={(e) => setCloudUrl(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">Found in Supabase Project Settings → API → Project URL</p>
+            </div>
+
+            <div>
+              <label className="block text-slate-700 font-bold text-xs mb-1">
+                Supabase Anon / Public Key *
+              </label>
+              <div className="relative">
+                <KeyRound className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="password"
+                  required
+                  placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  value={cloudKey}
+                  onChange={(e) => setCloudKey(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 font-mono text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                />
+              </div>
+              <p className="text-[10px] text-slate-400 mt-1">Paste the Publishable / Anon key here</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-2">
+              <a
+                href="https://supabase.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-bold text-emerald-700 hover:text-emerald-900 inline-flex items-center gap-1"
+              >
+                <span>Open Supabase Dashboard (Free)</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isTestingCloud}
+              className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 active:bg-emerald-900 text-white font-bold rounded-xl text-xs shadow-md inline-flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+            >
+              <Check className="w-4 h-4" />
+              <span>{isTestingCloud ? 'Testing Connection...' : isCloudConnected ? 'Update Cloud Connection' : 'Connect & Test Database'}</span>
+            </button>
+          </div>
+        </form>
+
+        {/* 4-Step Quick Setup Guide */}
+        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-600">
+          <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
+            <span>Free Supabase Cloud Database Banane Ka 2-Minute Guide:</span>
+          </div>
+          <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-600 leading-relaxed">
+            <li><strong>supabase.com</strong> par jayein aur apne wahi GitHub account se login karein.</li>
+            <li><strong>"New Project"</strong> banayein (Project name: <code className="font-mono bg-white px-1 border border-slate-200 rounded">green-island-school</code>, password set karein, aur region Singapore/Mumbai choose karein).</li>
+            <li>Supabase ke dashboard me left menu se <strong>"SQL Editor"</strong> me jayein, neche diya gaya SQL script copy karke wahan paste karein aur <strong>"Run"</strong> dabayein.</li>
+            <li>Supabase ke <strong>Project Settings → API Keys</strong> se <strong>Project URL</strong> aur <strong>Publishable key</strong> copy karke yahan upar paste karein aur Connect daba dein!</li>
+          </ol>
         </div>
       </div>
 

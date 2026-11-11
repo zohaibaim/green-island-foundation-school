@@ -56,16 +56,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
   if (!isStandalone && !isLoginModalOpen) return null;
 
   // Handle Login Submission
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setIsSubmitting(true);
 
-    const result = login(email, password);
-    setIsSubmitting(false);
+    try {
+      const result = await login(email, password);
+      setIsSubmitting(false);
 
-    if (!result.success) {
-      setErrorMsg(result.error || 'Authentication failed. Please verify your credentials.');
+      if (!result.success) {
+        setErrorMsg(result.error || 'Authentication failed. Please verify your credentials.');
+      }
+    } catch (err: any) {
+      setIsSubmitting(false);
+      setErrorMsg(err?.message || 'Login failed. Please check your network connection.');
     }
   };
 

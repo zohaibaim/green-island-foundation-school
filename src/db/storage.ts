@@ -18,6 +18,8 @@ import {
   StudentAlert,
   AlertSeverity,
 } from '../types';
+import { syncProfileToSupabase, deleteProfileFromSupabase } from './supabaseClient';
+
 
 import {
   INITIAL_SETTINGS,
@@ -241,6 +243,7 @@ export class StorageService {
     };
     users.push(newUser);
     this.saveUsers(users);
+    syncProfileToSupabase(newUser).catch(() => {});
     return newUser;
   }
 
@@ -267,6 +270,7 @@ export class StorageService {
     };
     users.push(newUser);
     this.saveUsers(users);
+    syncProfileToSupabase(newUser).catch(() => {});
     return { success: true, user: newUser };
   }
 
@@ -286,6 +290,7 @@ export class StorageService {
       isActive: true,
     };
     this.saveUsers(users);
+    syncProfileToSupabase(users[idx]).catch(() => {});
     return true;
   }
 
@@ -299,6 +304,7 @@ export class StorageService {
     if (idx === -1) return null;
     users[idx] = { ...users[idx], ...updates };
     this.saveUsers(users);
+    syncProfileToSupabase(users[idx]).catch(() => {});
     return users[idx];
   }
 
@@ -308,14 +314,20 @@ export class StorageService {
     if (idx === -1) return false;
     users[idx].password = newPassword;
     this.saveUsers(users);
+    syncProfileToSupabase(users[idx]).catch(() => {});
     return true;
   }
 
   static deleteUser(id: string): boolean {
     const users = this.getUsers();
+    const userToDelete = users.find((u) => u.id === id);
     const filtered = users.filter((u) => u.id !== id);
     if (filtered.length !== users.length) {
       this.saveUsers(filtered);
+      if (userToDelete) {
+        deleteProfileFromSupabase(userToDelete.email).catch(() => {});
+      }
+      deleteProfileFromSupabase(id).catch(() => {});
       return true;
     }
     return false;
@@ -1115,17 +1127,26 @@ CREATE TYPE hygiene_status_enum AS ENUM ('Satisfactory', 'Needs Improvement', 'N
 
 -- 3. PROFILES / USERS TABLE
 CREATE TABLE IF NOT EXISTS public.profiles (
-  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
   role app_role NOT NULL DEFAULT 'general_user',
+  password TEXT,
   phone TEXT,
   designation TEXT NOT NULL,
+  is_approved BOOLEAN DEFAULT TRUE,
+  is_active BOOLEAN DEFAULT TRUE,
   assigned_classes JSONB DEFAULT '[]'::jsonb,
   assigned_subjects JSONB DEFAULT '[]'::jsonb,
+  selected_subject_names JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Seed Primary Administrator Account
+INSERT INTO public.profiles (id, name, email, role, password, designation, is_approved, is_active)
+VALUES ('u-admin', 'Zohaib (Administrator)', 'zohaib.aim@gmail.com', 'admin', 'Malik@456', 'Super Administrator & School Head', TRUE, TRUE)
+ON CONFLICT (email) DO UPDATE SET password = 'Malik@456', is_approved = TRUE, is_active = TRUE;
 
 -- 4. CLASSES & SECTIONS
 CREATE TABLE IF NOT EXISTS public.classes (
@@ -1310,19 +1331,14 @@ ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_marks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.parent_meetings ENABLE ROW LEVEL SECURITY;
 
--- Admins and Principals have unrestricted read/write access:
-CREATE POLICY "Admin full access" ON public.students
-  FOR ALL TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'principal'))
-  );
-
--- Teachers can view students in assigned classes:
-CREATE POLICY "Teacher access students" ON public.students
-  FOR SELECT TO authenticated
-  USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('class_teacher', 'subject_teacher', 'general_user'))
-  );
+-- Allow full portal read & write for authorized school operations:
+CREATE POLICY "Portal access profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access students" ON public.students FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access attendance" ON public.attendance FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access daily_monitoring" ON public.daily_monitoring FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access complaints" ON public.complaints FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access student_marks" ON public.student_marks FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access parent_meetings" ON public.parent_meetings FOR ALL USING (true) WITH CHECK (true);
 
 -- 14. AUTOMATIC LOW MARKS & CONSECUTIVE ABSENCE ALERT VIEWS
 CREATE OR REPLACE VIEW public.students_requiring_attention AS

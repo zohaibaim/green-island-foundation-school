@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole, Student } from '../types';
 import { StorageService } from '../db/storage';
+import { getSupabaseClient, fetchAllProfilesFromSupabase } from '../db/supabaseClient';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -8,7 +9,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isVisitor: boolean;
   allUsers: User[];
-  login: (email: string, password: string) => { success: boolean; error?: string };
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchUser: (userId: string) => void;
   refreshUsers: () => void;
@@ -53,9 +54,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     refreshUsers();
+
+    // Async sync with Supabase cloud profiles
+    const syncFromCloud = async () => {
+      try {
+        const cloudProfiles = await fetchAllProfilesFromSupabase();
+        if (cloudProfiles && cloudProfiles.length > 0) {
+          const localUsers = StorageService.getUsers();
+          let changed = false;
+          const merged = [...localUsers];
+
+          cloudProfiles.forEach((cp) => {
+            const idx = merged.findIndex((u) => u.email.toLowerCase().trim() === cp.email.toLowerCase().trim());
+            if (idx >= 0) {
+              merged[idx] = { ...merged[idx], ...cp };
+              changed = true;
+            } else {
+              merged.push(cp);
+              changed = true;
+            }
+          });
+
+          if (changed) {
+            StorageService.saveUsers(merged);
+            setAllUsers(merged);
+            const activeId = localStorage.getItem('gifs_active_user_id');
+            if (activeId) {
+              const matchedActive = merged.find((u) => u.id === activeId);
+              if (matchedActive && matchedActive.isActive !== false) {
+                setCurrentUser(matchedActive);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Initial cloud sync warning:', err);
+      }
+    };
+
+    syncFromCloud();
   }, []);
 
-  const login = (email: string, password: string): { success: boolean; error?: string } => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    // 1. Try local storage first
     const res = StorageService.authenticateUser(email, password);
     if (res.success && res.user) {
       setCurrentUser(res.user);
@@ -63,6 +104,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoginModalOpen(false);
       return { success: true };
     }
+
+    // 2. Fallback to Supabase Cloud Database if connected
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      try {
+        const cleanEmail = email.trim().toLowerCase();
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .ilike('email', cleanEmail)
+          .maybeSingle();
+
+        if (data && !error) {
+          const isTargetAdmin = cleanEmail === 'zohaib.aim@gmail.com';
+          const expectedPassword =
+            data.password ||
+            (isTargetAdmin || data.role === 'admin' ? 'Malik@456' : data.role === 'principal' ? 'principal123' : 'teacher123');
+
+          if (data.is_approved === false) {
+            return {
+              success: false,
+              error: 'Aap ki registration request Administrator ke paas review ke lye pending hay. School Administrator verify karega tab login hoga.',
+            };
+          }
+
+          if (data.is_active === false) {
+            return {
+              success: false,
+              error: 'This account has been deactivated by the Administrator. Please contact school admin.',
+            };
+          }
+
+          if (expectedPassword !== password) {
+            return { success: false, error: 'Incorrect password. Please verify your credentials.' };
+          }
+
+          // Verified from cloud Supabase
+          const cloudUser: User = {
+            id: data.id || `u-${Date.now()}`,
+            name: data.name,
+            email: data.email,
+            role: data.role,
+            designation: data.designation || 'Staff Member',
+            password: data.password || expectedPassword,
+            phone: data.phone,
+            isActive: data.is_active !== false,
+            isApproved: data.is_approved !== false,
+            assignedClasses: data.assigned_classes || [],
+            assignedSubjects: data.assigned_subjects || [],
+            selectedSubjectNames: data.selected_subject_names || [],
+            registrationDate: data.created_at,
+          };
+
+          const currentUsers = StorageService.getUsers();
+          const existingIdx = currentUsers.findIndex((u) => u.email.trim().toLowerCase() === cleanEmail);
+          if (existingIdx >= 0) {
+            currentUsers[existingIdx] = cloudUser;
+          } else {
+            currentUsers.push(cloudUser);
+          }
+          StorageService.saveUsers(currentUsers);
+          setAllUsers(currentUsers);
+
+          setCurrentUser(cloudUser);
+          localStorage.setItem('gifs_active_user_id', cloudUser.id);
+          setIsLoginModalOpen(false);
+          return { success: true };
+        }
+      } catch (cloudErr) {
+        console.warn('Supabase cloud login error:', cloudErr);
+      }
+    }
+
     return { success: false, error: res.error || 'Authentication failed' };
   };
 

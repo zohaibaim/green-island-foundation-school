@@ -250,20 +250,33 @@ export class StorageService {
   static registerPendingUser(userData: Omit<User, 'id'>): { success: boolean; error?: string; user?: User } {
     const users = this.getUsers();
     const cleanEmail = userData.email.trim().toLowerCase();
-    const existing = users.find((u) => u.email.trim().toLowerCase() === cleanEmail);
-    if (existing) {
-      if (existing.isApproved === false) {
-        return {
-          success: false,
-          error: 'Is email se pehle hi registration request submit ho chuki hay jo Admin approval ke lye pending hay.',
-        };
+    const existingIndex = users.findIndex((u) => u.email.trim().toLowerCase() === cleanEmail);
+
+    if (existingIndex >= 0) {
+      const existing = users[existingIndex];
+      // If approved and active, they should log in
+      if (existing.isApproved === true && existing.isActive !== false) {
+        return { success: false, error: 'Yeh email address pehle se registered hay. Please login karein.' };
       }
-      return { success: false, error: 'Yeh email address pehle se registered hay. Please login karein.' };
+      // If pending or previously reset, update and re-submit request for approval
+      const updatedUser: User = {
+        ...existing,
+        ...userData,
+        email: cleanEmail,
+        isActive: true,
+        isApproved: false,
+        registrationDate: new Date().toISOString(),
+      };
+      users[existingIndex] = updatedUser;
+      this.saveUsers(users);
+      syncProfileToSupabase(updatedUser).catch(() => {});
+      return { success: true, user: updatedUser };
     }
 
     const newUser: User = {
       ...userData,
       id: 'u-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      email: cleanEmail,
       isActive: true,
       isApproved: false, // Must be verified and approved by School Admin
       registrationDate: new Date().toISOString(),

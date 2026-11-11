@@ -154,7 +154,15 @@ export async function deleteProfileFromSupabase(emailOrId: string): Promise<void
   const client = getSupabaseClient();
   if (!client) return;
   try {
-    await client.from('profiles').delete().or(`id.eq.${emailOrId},email.eq.${emailOrId}`);
+    const clean = emailOrId.trim().toLowerCase();
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (clean.includes('@')) {
+      await client.from('profiles').delete().ilike('email', clean);
+    } else if (uuidRegex.test(clean)) {
+      await client.from('profiles').delete().eq('id', clean);
+    } else {
+      await client.from('profiles').delete().ilike('email', clean);
+    }
   } catch (e) {
     console.warn('Failed deleting profile from Supabase:', e);
   }

@@ -60,30 +60,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const cloudProfiles = await fetchAllProfilesFromSupabase();
         if (cloudProfiles && cloudProfiles.length > 0) {
+          const cloudEmails = new Set(cloudProfiles.map((cp) => cp.email.toLowerCase().trim()));
           const localUsers = StorageService.getUsers();
-          let changed = false;
-          const merged = [...localUsers];
 
-          cloudProfiles.forEach((cp) => {
-            const idx = merged.findIndex((u) => u.email.toLowerCase().trim() === cp.email.toLowerCase().trim());
-            if (idx >= 0) {
-              merged[idx] = { ...merged[idx], ...cp };
-              changed = true;
-            } else {
-              merged.push(cp);
-              changed = true;
+          // Cloud profiles are authoritative source of truth
+          const updated: User[] = [...cloudProfiles];
+
+          // Retain primary admin if not in cloud list
+          localUsers.forEach((lu) => {
+            const clean = lu.email.toLowerCase().trim();
+            if (!cloudEmails.has(clean) && clean === 'zohaib.aim@gmail.com') {
+              updated.push(lu);
             }
           });
 
-          if (changed) {
-            StorageService.saveUsers(merged);
-            setAllUsers(merged);
-            const activeId = localStorage.getItem('gifs_active_user_id');
-            if (activeId) {
-              const matchedActive = merged.find((u) => u.id === activeId);
-              if (matchedActive && matchedActive.isActive !== false) {
-                setCurrentUser(matchedActive);
-              }
+          StorageService.saveUsers(updated);
+          setAllUsers(updated);
+
+          const activeId = localStorage.getItem('gifs_active_user_id');
+          if (activeId) {
+            const matchedActive = updated.find(
+              (u) => u.id === activeId || u.email.toLowerCase().trim() === activeId.toLowerCase().trim()
+            );
+            if (matchedActive && matchedActive.isActive !== false) {
+              setCurrentUser(matchedActive);
+            } else {
+              localStorage.removeItem('gifs_active_user_id');
+              setCurrentUser(null);
             }
           }
         }

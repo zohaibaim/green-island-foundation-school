@@ -23,7 +23,7 @@ import { LoginModal } from './components/auth/LoginModal';
 import { LayoutDashboard, AlertTriangle, Users, CalendarCheck, Menu, Lock } from 'lucide-react';
 
 function AppContent() {
-  const { isAuthenticated, currentUser, targetTabAfterLogin } = useAuth();
+  const { isAuthenticated, currentUser, currentRole, targetTabAfterLogin } = useAuth();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedStudentId, setSelectedStudentId] = useState<string>('std-1');
   const [dataVersion, setDataVersion] = useState<number>(1);
@@ -155,11 +155,31 @@ function AppContent() {
             )}
 
             {activeTab === 'classes_teachers' && (
-              <ClassesAndTeachersManager />
+              currentRole === 'admin' || currentRole === 'principal' ? (
+                <ClassesAndTeachersManager />
+              ) : (
+                <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center shadow-xs">
+                  <div className="w-12 h-12 bg-amber-100 text-amber-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-base">Access Restricted to Administration</h3>
+                  <p className="text-xs text-slate-500 mt-1">Only School Administrators and Principals have authorization to manage classes and staff assignments.</p>
+                </div>
+              )
             )}
 
             {activeTab === 'system_settings' && (
-              <SystemSettingsAndSQL />
+              currentRole === 'admin' ? (
+                <SystemSettingsAndSQL />
+              ) : (
+                <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center shadow-xs">
+                  <div className="w-12 h-12 bg-rose-100 text-rose-800 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <h3 className="font-bold text-slate-900 text-base">Super Administrator Restricted</h3>
+                  <p className="text-xs text-slate-500 mt-1">Database schemas, credentials, and system settings are strictly restricted to the Super Administrator (zohaib.aim@gmail.com).</p>
+                </div>
+              )
             )}
           </div>
         </main>

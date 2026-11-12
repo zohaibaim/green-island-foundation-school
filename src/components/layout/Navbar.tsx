@@ -105,21 +105,22 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           )}
 
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 flex items-center justify-center text-white shadow-md shadow-emerald-900/20 border border-emerald-500/30 shrink-0">
-            <School className="w-4 h-4 sm:w-5 sm:h-5" />
-          </div>
-          <div className="overflow-hidden">
-            <div className="flex items-center space-x-1.5">
-              <h1 className="text-xs sm:text-base font-extrabold text-slate-900 leading-tight truncate">
-                GREEN ISLAND
-              </h1>
-              <span className="hidden sm:inline-block px-1.5 py-0.5 text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
-                GIFS
-              </span>
+          <div className="flex items-center space-x-2.5">
+            <img
+              src="/gifs_logo.png"
+              alt="Green Island Foundation School"
+              className="h-9 sm:h-11 w-auto object-contain bg-white rounded-lg p-0.5 border border-slate-200/80 shadow-xs shrink-0"
+            />
+            <div className="overflow-hidden">
+              <div className="flex items-center space-x-1.5">
+                <h1 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight truncate">
+                  Green Island Foundation School
+                </h1>
+              </div>
+              <p className="text-[10px] text-emerald-700 font-semibold truncate hidden xs:block">
+                (A Project of GIT) • 144-D Hali Road, P.E.C.H.S, Block 2
+              </p>
             </div>
-            <p className="text-[10px] sm:text-xs text-slate-500 truncate hidden xs:block">
-              Student Portfolio & Monitoring
-            </p>
           </div>
         </div>
 

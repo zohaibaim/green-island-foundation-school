@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (data.is_approved === false) {
             return {
               success: false,
-              error: 'Aap ki registration request Administrator ke paas review ke lye pending hay. School Administrator verify karega tab login hoga.',
+              error: 'Your registration request is pending review and approval by the School Administrator. Once verified, you will be able to log in.',
             };
           }
 

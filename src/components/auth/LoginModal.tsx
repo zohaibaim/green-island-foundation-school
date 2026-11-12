@@ -148,9 +148,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
         if (cloudExisting && !cloudCheckErr) {
           setIsSubmitting(false);
           if (cloudExisting.is_approved === false) {
-            setErrorMsg('Is email se pehle hi registration request submit ho chuki hay jo Admin approval ke lye pending hay.');
+            setErrorMsg('A registration request for this email is already submitted and pending Administrator approval.');
           } else {
-            setErrorMsg('Yeh email address pehle se registered hay. Please sign in karein.');
+            setErrorMsg('This email address is already registered. Please sign in with your password.');
           }
           scrollToTop();
           return;
@@ -231,11 +231,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
             </button>
           )}
 
-          <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md mx-auto flex items-center justify-center border border-white/20 shadow-md mb-2">
-            <School className="w-6 h-6 text-emerald-200" />
+          <div className="mx-auto mb-2 flex items-center justify-center">
+            <img
+              src="/gifs_logo.png"
+              alt="Green Island Foundation School"
+              className="h-14 sm:h-16 w-auto object-contain bg-white rounded-xl p-1.5 shadow-md border border-white/40"
+            />
           </div>
-          <h2 className="text-lg font-extrabold tracking-tight">GREEN ISLAND FOUNDATION SCHOOL</h2>
-          <p className="text-xs text-emerald-200 font-medium">Academic & Staff Security Portal</p>
+          <h2 className="text-lg sm:text-xl font-extrabold tracking-tight">Green Island Foundation School</h2>
+          <p className="text-xs text-emerald-100 font-semibold">(A Project of GIT) • 144-D Hali Road, P.E.C.H.S, Block 2</p>
+          <p className="text-[11px] text-emerald-200 mt-0.5">Staff Security & Academic Management Portal</p>
 
           {/* Mode Switch Tabs */}
           <div className="mt-4 flex items-center justify-center bg-emerald-950/40 p-1 rounded-xl max-w-xs mx-auto border border-emerald-600/30">
@@ -360,7 +365,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
                   <span>Authorized Staff Portal</span>
                 </div>
                 <p className="text-[10px] text-slate-500 leading-relaxed">
-                  Pehle se approved ya registered users direct apne Email aur Password ke sath login kar sakte hain (baar baar approval ki zaroorat nahi hoti).
+                  Approved staff members can sign in directly using their registered Email and Password anytime without requiring repeated approval.
                 </p>
               </div>
             </form>
@@ -377,7 +382,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
                   <span>Teacher & Staff Self-Registration (One-Time Verification)</span>
                 </div>
                 <p className="text-[11px] text-emerald-800 leading-relaxed">
-                  Registration submit hone ke baad School Administrator sirf <strong>first time (pehli dafa)</strong> aap ka account approve karega. Ek martaba approve hone ke baad aap jab bhi login karenge, <strong>direct ID aur password laga kar login ho jaenge</strong> (dobara verification ki zaroorat nahi hogi).
+                  After submitting registration, the School Administrator will approve your account <strong>once (initial verification)</strong>. Once activated, you can log in directly with your registered Email and Password anytime.
                 </p>
               </div>
 
@@ -482,7 +487,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
                   </div>
 
                   <p className="text-[10px] text-blue-800">
-                    Aap ek ya ek say zyada (multiple) subjects select kar sakte hain jo aap teach karte hain:
+                    Select the subjects you are assigned to teach (multiple selections allowed):
                   </p>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-white rounded-lg border border-blue-200">
@@ -587,7 +592,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
                   Registration Request Submitted!
                 </h3>
                 <p className="text-xs text-emerald-700 font-semibold">
-                  Aap ki request Administrator ke paas bhej di gai hay.
+                  Your registration request has been submitted to the School Administrator.
                 </p>
               </div>
 
@@ -603,7 +608,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-600 pt-1 border-t border-slate-200 leading-relaxed">
-                  School Administrator sirf <strong>first time</strong> aap ki request ko verify aur approve karega. Ek dafa approve hone ke baad aap <strong>hamesha (2nd time, 3rd time, etc.) direct apna Email aur Password laga kar login</strong> kar saken gay (baar baar admin verification ki zaroorat nahi hogi).
+                  The School Administrator will verify and approve your account <strong>once (initial registration)</strong>. Once activated, you can <strong>sign in directly with your registered Email and Password anytime</strong> without repeated verification.
                 </p>
               </div>
 

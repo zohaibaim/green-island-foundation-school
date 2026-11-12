@@ -76,15 +76,13 @@ export const ReportsCenter: React.FC<{ onSelectStudent: (id: string) => void }> 
 
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('GREEN ISLAND FOUNDATION SCHOOL', pageWidth / 2, 12, { align: 'center' });
+    doc.setFontSize(13);
+    doc.text('GREEN ISLAND FOUNDATION SCHOOL', pageWidth / 2, 11, { align: 'center' });
 
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-    doc.text('Student Portfolio, Academic Records & Daily Monitoring Management System', pageWidth / 2, 18, {
-      align: 'center',
-    });
-    doc.text('Plot ST-14, Block 7, Karachi • Phone: 021-3498-5521 • info@greenisland.edu.pk', pageWidth / 2, 23, {
+    doc.setFontSize(8.5);
+    doc.text('(A Project of GIT)', pageWidth / 2, 16, { align: 'center' });
+    doc.text('144-D Hali Road, P.E.C.H.S, Block 2, Karachi • info@greenisland.edu.pk', pageWidth / 2, 21, {
       align: 'center',
     });
 
@@ -324,17 +322,21 @@ export const ReportsCenter: React.FC<{ onSelectStudent: (id: string) => void }> 
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-8 max-w-4xl mx-auto space-y-6">
         {/* Printable Official Header */}
         <div className="border-b-2 border-emerald-900 pb-4 text-center space-y-1">
-          <div className="w-12 h-12 bg-emerald-700 text-white font-extrabold text-sm rounded-xl flex items-center justify-center mx-auto mb-2 shadow-xs">
-            GIFS
+          <div className="flex justify-center mb-2">
+            <img
+              src="/gifs_logo.png"
+              alt="Green Island Foundation School"
+              className="h-16 w-auto object-contain mx-auto"
+            />
           </div>
           <h1 className="text-xl font-extrabold tracking-wide text-slate-900">
-            GREEN ISLAND FOUNDATION SCHOOL
+            Green Island Foundation School
           </h1>
-          <p className="text-xs text-slate-600 font-medium">
-            Student Portfolio, Academic Records & Daily Monitoring Management System
+          <p className="text-xs text-emerald-800 font-bold">
+            (A Project of GIT)
           </p>
-          <p className="text-[11px] text-slate-400">
-            Plot ST-14, Block 7, Karachi • Phone: 021-3498-5521 • info@greenisland.edu.pk
+          <p className="text-[11px] text-slate-500 font-medium">
+            144-D Hali Road, P.E.C.H.S, Block 2, Karachi • Phone: 021-3498-5521 • info@greenisland.edu.pk
           </p>
         </div>
 

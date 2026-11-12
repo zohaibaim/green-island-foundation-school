@@ -153,12 +153,14 @@ export interface StudentComplaint {
 }
 
 export type ExaminationCategory =
+  | '1st Monthly Test'
+  | 'Mid-Term Examination'
+  | '2nd Monthly Test'
+  | 'Final Term Examination'
   | 'Monthly Tests'
   | 'Weekly Tests'
   | 'First Term Examination'
-  | 'Mid-Term Examination'
   | 'Second Term Examination'
-  | 'Final Term Examination'
   | 'Annual Examination'
   | 'Class Assessments'
   | 'Subject Assignments'

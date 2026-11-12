@@ -18,7 +18,13 @@ import {
   StudentAlert,
   AlertSeverity,
 } from '../types';
-import { syncProfileToSupabase, deleteProfileFromSupabase } from './supabaseClient';
+import {
+  syncProfileToSupabase,
+  deleteProfileFromSupabase,
+  syncAttendanceToSupabase,
+  syncMarksToSupabase,
+  syncDailyMonitoringToSupabase,
+} from './supabaseClient';
 
 
 import {
@@ -94,7 +100,14 @@ function saveItem<T>(key: string, val: T): void {
 export class StorageService {
   // Settings
   static getSettings(): SystemSettings {
-    return loadItem<SystemSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    const s = loadItem<SystemSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    if (!s.schoolAddress || s.schoolAddress.includes('Plot ST-14') || s.schoolName.toUpperCase() === s.schoolName) {
+      s.schoolAddress = '144-D Hali Road, P.E.C.H.S, Block 2, Karachi';
+      s.schoolName = 'Green Island Foundation School';
+      s.schoolSubtitle = '(A Project of GIT)';
+      this.saveSettings(s);
+    }
+    return s;
   }
 
   static saveSettings(settings: SystemSettings): void {
@@ -256,7 +269,7 @@ export class StorageService {
       const existing = users[existingIndex];
       // If approved and active, they should log in
       if (existing.isApproved === true && existing.isActive !== false) {
-        return { success: false, error: 'Yeh email address pehle se registered hay. Please login karein.' };
+        return { success: false, error: 'This email address is already registered. Please sign in with your credentials.' };
       }
       // If pending or previously reset, update and re-submit request for approval
       const updatedUser: User = {
@@ -358,7 +371,7 @@ export class StorageService {
     if (user.isApproved === false) {
       return {
         success: false,
-        error: 'Aap ki registration request Administrator ke paas review ke lye pending hay. Jab School Administrator verify aur approve karega tab aap login kar sakenge.',
+        error: 'Your registration request is pending review by the School Administrator. Once verified and approved, you will be able to log in.',
       };
     }
 
@@ -455,6 +468,7 @@ export class StorageService {
     });
 
     this.saveAttendance(updated);
+    syncAttendanceToSupabase(updated).catch(() => {});
     return updated;
   }
 
@@ -476,6 +490,7 @@ export class StorageService {
     };
     current.push(newRec);
     this.saveMonitoring(current);
+    syncDailyMonitoringToSupabase([newRec]).catch(() => {});
     return newRec;
   }
 
@@ -516,7 +531,12 @@ export class StorageService {
 
   // Examinations & Marks
   static getExaminations(): Examination[] {
-    return loadItem<Examination[]>(STORAGE_KEYS.EXAMINATIONS, INITIAL_EXAMINATIONS);
+    const list = loadItem<Examination[]>(STORAGE_KEYS.EXAMINATIONS, INITIAL_EXAMINATIONS);
+    if (!list || list.length === 0) {
+      this.saveExaminations(INITIAL_EXAMINATIONS);
+      return INITIAL_EXAMINATIONS;
+    }
+    return list;
   }
 
   static saveExaminations(exams: Examination[]): void {
@@ -580,6 +600,7 @@ export class StorageService {
     });
 
     this.saveMarks(updated);
+    syncMarksToSupabase(updated).catch(() => {});
   }
 
   // Health and Hygiene

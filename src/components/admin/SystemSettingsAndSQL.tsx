@@ -304,13 +304,13 @@ export const SystemSettingsAndSQL: React.FC = () => {
         {/* 4-Step Quick Setup Guide */}
         <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs text-slate-600">
           <div className="font-bold text-slate-800 flex items-center gap-1.5 text-xs">
-            <span>Free Supabase Cloud Database Banane Ka 2-Minute Guide:</span>
+            <span>Supabase Cloud Database Quick Setup Guide:</span>
           </div>
           <ol className="list-decimal pl-4 space-y-1 text-[11px] text-slate-600 leading-relaxed">
-            <li><strong>supabase.com</strong> par jayein aur apne wahi GitHub account se login karein.</li>
-            <li><strong>"New Project"</strong> banayein (Project name: <code className="font-mono bg-white px-1 border border-slate-200 rounded">green-island-school</code>, password set karein, aur region Singapore/Mumbai choose karein).</li>
-            <li>Supabase ke dashboard me left menu se <strong>"SQL Editor"</strong> me jayein, neche diya gaya SQL script copy karke wahan paste karein aur <strong>"Run"</strong> dabayein.</li>
-            <li>Supabase ke <strong>Project Settings → API Keys</strong> se <strong>Project URL</strong> aur <strong>Publishable key</strong> copy karke yahan upar paste karein aur Connect daba dein!</li>
+            <li>Visit <strong>supabase.com</strong> and sign in with your GitHub account.</li>
+            <li>Click <strong>"New Project"</strong> (Project Name: <code className="font-mono bg-white px-1 border border-slate-200 rounded">green-island-foundation-school</code>, create a secure database password, and select region).</li>
+            <li>From the Supabase dashboard left navigation, open <strong>"SQL Editor"</strong>, copy the SQL schema script provided below, paste it into the editor, and click <strong>"Run"</strong>.</li>
+            <li>Go to <strong>Project Settings → API</strong>, copy your <strong>Project URL</strong> and <strong>Publishable (Anon) Key</strong>, paste them into the fields above, and click <strong>Connect</strong>.</li>
           </ol>
         </div>
       </div>
@@ -451,7 +451,7 @@ export const SystemSettingsAndSQL: React.FC = () => {
               </h3>
             </div>
             <p className="text-xs text-purple-200 max-w-2xl leading-relaxed">
-              Agar aap ko yeh pura software computer me chalana hay ya GitHub par dalna hay, to yahan se 1-Click me poori project ZIP file download karein (tamam components, pages, database schemas, aur styling included).
+              Export and download the complete project source code archive in one click for local offline backup or deployment to GitHub and Vercel (includes all components, pages, styling, and database migrations).
             </p>
           </div>
           <a

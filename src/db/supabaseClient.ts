@@ -195,3 +195,87 @@ export async function fetchAllProfilesFromSupabase(): Promise<any[]> {
   }
 }
 
+export async function syncAttendanceToSupabase(records: any[]): Promise<void> {
+  const client = getSupabaseClient();
+  if (!client || !records || records.length === 0) return;
+  try {
+    const rows = records.map((r) => ({
+      id: r.id || `att-${r.studentId}-${r.date}`,
+      student_id: r.studentId,
+      student_name: r.studentName,
+      roll_no: String(r.rollNo),
+      class_id: r.classId,
+      section_id: r.sectionId,
+      date: r.date,
+      status: r.status,
+      arrival_time: r.arrivalTime || null,
+      late_duration_minutes: r.lateDurationMinutes || 0,
+      reason: r.reason || null,
+      remarks: r.remarks || null,
+      is_verified: r.isVerified === true,
+      verified_by: r.verifiedBy || null,
+      recorded_by: r.recordedBy || 'Staff',
+      updated_at: new Date().toISOString(),
+    }));
+    await client.from('attendance').upsert(rows, { onConflict: 'student_id,date' });
+  } catch (e) {
+    console.warn('Failed syncing attendance to Supabase:', e);
+  }
+}
+
+export async function syncMarksToSupabase(marks: any[]): Promise<void> {
+  const client = getSupabaseClient();
+  if (!client || !marks || marks.length === 0) return;
+  try {
+    const rows = marks.map((m) => ({
+      id: m.id || `mrk-${m.examinationId}-${m.studentId}-${m.subjectName}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
+      examination_id: m.examinationId,
+      student_id: m.studentId,
+      student_name: m.studentName,
+      roll_no: String(m.rollNo),
+      class_id: m.classId,
+      section_id: m.sectionId,
+      subject_name: m.subjectName,
+      total_marks: m.totalMarks,
+      obtained_marks: m.obtainedMarks !== null ? m.obtainedMarks : null,
+      percentage: m.percentage !== null ? m.percentage : null,
+      grade: m.grade || 'N/A',
+      remarks: m.remarks || null,
+      teacher_id: m.teacherId || null,
+      teacher_name: m.teacherName || null,
+      date: m.date || new Date().toISOString().split('T')[0],
+      updated_at: new Date().toISOString(),
+    }));
+    await client.from('student_marks').upsert(rows, { onConflict: 'id' });
+  } catch (e) {
+    console.warn('Failed syncing marks to Supabase:', e);
+  }
+}
+
+export async function syncDailyMonitoringToSupabase(records: any[]): Promise<void> {
+  const client = getSupabaseClient();
+  if (!client || !records || records.length === 0) return;
+  try {
+    const rows = records.map((r) => ({
+      id: r.id || `mon-${r.studentId}-${r.date}-${r.subjectName}`.replace(/[^a-zA-Z0-9_-]/g, '_'),
+      date: r.date,
+      student_id: r.studentId,
+      student_name: r.studentName,
+      roll_no: String(r.rollNo),
+      class_id: r.classId,
+      section_id: r.sectionId,
+      subject_name: r.subjectName,
+      teacher_id: r.teacherId || 'staff',
+      teacher_name: r.teacherName || 'Staff',
+      textbook_brought: r.textbookBrought || 'Yes',
+      notebook_brought: r.notebookBrought || 'Yes',
+      homework_completed: r.homeworkCompleted || 'Yes',
+      classwork_completed: r.classworkCompleted || 'Yes',
+      remarks: r.remarks || null,
+      created_at: new Date().toISOString(),
+    }));
+    await client.from('daily_monitoring').upsert(rows, { onConflict: 'id' });
+  } catch (e) {
+    console.warn('Failed syncing daily monitoring to Supabase:', e);
+  }
+}

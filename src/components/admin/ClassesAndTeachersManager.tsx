@@ -1083,7 +1083,7 @@ export const ClassesAndTeachersManager: React.FC = () => {
                   Staff Registration Requests Awaiting Verification
                 </h3>
                 <p className="text-xs text-amber-800">
-                  Yeh sirf pehli dafa (first time) registration ke lye hay. Ek dafa aap kisi teacher ko Approve & Activate kar denge, to wo 2nd time aur hamesha direct apne Email aur Password se bina kisi approval ke login kar sakega.
+                  This verification is only required once during initial staff registration. Once approved and activated, the teacher can log in permanently with their registered Email and Password.
                 </p>
               </div>
             </div>

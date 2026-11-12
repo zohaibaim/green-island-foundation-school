@@ -301,6 +301,32 @@ export const StudentPortfolio: React.FC<StudentPortfolioProps> = ({
 
       {/* Student Profile Header Card */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        {/* Official School Letterhead */}
+        <div className="border-b border-slate-100 px-5 sm:px-6 py-3 bg-white flex items-center justify-between gap-4">
+          <div className="flex items-center space-x-3">
+            <img
+              src="/gifs_logo.png"
+              alt="Green Island Foundation School"
+              className="h-11 sm:h-12 w-auto object-contain"
+            />
+            <div>
+              <h1 className="text-sm sm:text-base font-extrabold text-slate-900 leading-tight">
+                Green Island Foundation School
+              </h1>
+              <p className="text-[11px] text-emerald-800 font-bold">
+                (A Project of GIT)
+              </p>
+              <p className="text-[10px] text-slate-500 font-medium hidden sm:block">
+                144-D Hali Road, P.E.C.H.S, Block 2, Karachi • Student Confidential Portfolio Record
+              </p>
+            </div>
+          </div>
+          <div className="text-right text-[10px] text-slate-400 font-mono hidden md:block">
+            <span className="font-bold text-emerald-700">OFFICIAL STUDENT LEDGER</span>
+            <p>Session: 2026-2027</p>
+          </div>
+        </div>
+
         <div className="p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 bg-gradient-to-r from-slate-50 via-white to-emerald-50/20">
           <div className="flex items-center space-x-4">
             {/* Student Photo */}

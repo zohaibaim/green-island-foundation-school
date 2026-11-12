@@ -23,9 +23,27 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
   const classes = StorageService.getClasses();
   const allStudents = StorageService.getStudents();
 
+  // Determine initial class and section based on teacher assignment if available
+  const initialClassId = useMemo(() => {
+    if (currentUser?.assignedClasses && currentUser.assignedClasses.length > 0) {
+      const match = currentUser.assignedClasses[0].split('-')[0];
+      const found = classes.find((c) => c.name.toLowerCase() === match.toLowerCase() || c.id === match);
+      if (found) return found.id;
+    }
+    return classes[0]?.id || 'c9';
+  }, [currentUser, classes]);
+
+  const initialSectionId = useMemo(() => {
+    if (currentUser?.assignedClasses && currentUser.assignedClasses.length > 0) {
+      const parts = currentUser.assignedClasses[0].split('-');
+      if (parts[1]) return parts[1].trim().toUpperCase().replace(/^SECTION\s+/i, '');
+    }
+    return 'A';
+  }, [currentUser]);
+
   // State
-  const [selectedClassId, setSelectedClassId] = useState<string>('c9');
-  const [selectedSectionId, setSelectedSectionId] = useState<string>('A');
+  const [selectedClassId, setSelectedClassId] = useState<string>(initialClassId);
+  const [selectedSectionId, setSelectedSectionId] = useState<string>(initialSectionId);
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     return new Date().toISOString().split('T')[0];
   });

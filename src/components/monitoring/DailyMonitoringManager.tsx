@@ -24,10 +24,38 @@ export const DailyMonitoringManager: React.FC<{ onSelectStudent: (id: string) =>
     StorageService.getMonitoring()
   );
 
+  // Determine initial class, section & subject from teacher profile
+  const initialClassId = useMemo(() => {
+    if (currentUser?.assignedClasses && currentUser.assignedClasses.length > 0) {
+      const match = currentUser.assignedClasses[0].split('-')[0];
+      const found = classes.find((c) => c.name.toLowerCase() === match.toLowerCase() || c.id === match);
+      if (found) return found.id;
+    }
+    return classes[0]?.id || 'c9';
+  }, [currentUser, classes]);
+
+  const initialSectionId = useMemo(() => {
+    if (currentUser?.assignedClasses && currentUser.assignedClasses.length > 0) {
+      const parts = currentUser.assignedClasses[0].split('-');
+      if (parts[1]) return parts[1].trim().toUpperCase().replace(/^SECTION\s+/i, '');
+    }
+    return 'A';
+  }, [currentUser]);
+
+  const initialSubject = useMemo(() => {
+    if (currentUser?.assignedSubjects && currentUser.assignedSubjects.length > 0) {
+      return currentUser.assignedSubjects[0].subjectName;
+    }
+    if (currentUser?.selectedSubjectNames && currentUser.selectedSubjectNames.length > 0) {
+      return currentUser.selectedSubjectNames[0];
+    }
+    return subjects[0]?.name || 'Mathematics';
+  }, [currentUser, subjects]);
+
   // Active Filters & Selection
-  const [selectedClassId, setSelectedClassId] = useState<string>('c9');
-  const [selectedSectionId, setSelectedSectionId] = useState<string>('A');
-  const [selectedSubject, setSelectedSubject] = useState<string>('Mathematics');
+  const [selectedClassId, setSelectedClassId] = useState<string>(initialClassId);
+  const [selectedSectionId, setSelectedSectionId] = useState<string>(initialSectionId);
+  const [selectedSubject, setSelectedSubject] = useState<string>(initialSubject);
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string>('');
 

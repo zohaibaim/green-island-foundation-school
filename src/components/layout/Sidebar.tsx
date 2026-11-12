@@ -147,6 +147,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
   ];
 
+  // Filter navItems strictly based on current role (Admin, Principal, Class Teacher, Subject Teacher)
+  const allowedNavItems = navItems.filter((item) => {
+    if (currentRole === 'admin') {
+      return true; // Admin has full access to all features
+    }
+    if (currentRole === 'principal') {
+      // Principal has authority across school operations, but strictly restricted from system_settings / SQL
+      return item.id !== 'system_settings';
+    }
+    if (currentRole === 'class_teacher') {
+      // Class Teacher: In charge of assigned class (Attendance, Hygiene, Exams, Books/Homework, Complaints, Observations, Parent meetings)
+      const disallowed = ['system_settings', 'classes_teachers', 'excel_import'];
+      return !disallowed.includes(item.id);
+    }
+    if (currentRole === 'subject_teacher') {
+      // Subject Teacher: Daily books & notebook monitoring, discipline complaints, exam marks, student roster, reports
+      const allowed = ['dashboard', 'students', 'academics', 'monitoring', 'complaints', 'reports'];
+      return allowed.includes(item.id);
+    }
+    // Visitor / General
+    return item.id === 'dashboard';
+  });
+
   // Group items by section
   const sections = ['Core', 'Academic & Records', 'Daily Monitoring', 'Communication', 'Tools & Reports', 'Administration'];
 
@@ -167,18 +190,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           isOpenMobile ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        {/* School Crest Badge */}
-        <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-white text-xs shadow-xs">
-              GIFS
-            </div>
+        {/* School Crest & Logo */}
+        <div className="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
+          <div className="flex items-center space-x-2.5 overflow-hidden">
+            <img
+              src="/gifs_logo.png"
+              alt="Green Island Foundation School"
+              className="h-10 w-auto object-contain bg-white rounded-lg p-1 shrink-0 shadow-xs"
+            />
             <div className="overflow-hidden">
-              <p className="text-xs font-bold text-white tracking-wider truncate">
-                GREEN ISLAND
+              <p className="text-xs font-bold text-white tracking-tight leading-tight truncate">
+                Green Island
               </p>
-              <p className="text-[10px] text-emerald-400 font-medium truncate">
+              <p className="text-[11px] font-medium text-slate-300 truncate">
                 Foundation School
+              </p>
+              <p className="text-[9px] text-emerald-400 font-semibold truncate">
+                (A Project of GIT)
               </p>
             </div>
           </div>
@@ -196,7 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Navigation Links */}
         <div className="flex-1 overflow-y-auto py-3 px-3 space-y-4">
           {sections.map((sectionName) => {
-            const items = navItems.filter((item) => item.section === sectionName);
+            const items = allowedNavItems.filter((item) => item.section === sectionName);
             if (items.length === 0) return null;
 
             return (

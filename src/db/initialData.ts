@@ -7,6 +7,7 @@ import {
   DailySubjectMonitoring,
   StudentComplaint,
   Examination,
+  ExaminationCategory,
   StudentMarkRecord,
   HealthAndHygieneRecord,
   UniformRecord,
@@ -18,9 +19,9 @@ import {
 } from '../types';
 
 export const INITIAL_SETTINGS: SystemSettings = {
-  schoolName: 'GREEN ISLAND FOUNDATION SCHOOL',
-  schoolSubtitle: 'Student Portfolio, Academic Records & Daily Monitoring Management System',
-  schoolAddress: 'Plot ST-14, Block 7, Gulshan-e-Iqbal / Clifton Campus, Karachi',
+  schoolName: 'Green Island Foundation School',
+  schoolSubtitle: '(A Project of GIT)',
+  schoolAddress: '144-D Hali Road, P.E.C.H.S, Block 2, Karachi',
   schoolPhone: '+92 (21) 3498-5521 / +92 300 1234567',
   schoolEmail: 'info@greenisland.edu.pk',
   academicYear: '2026-2027',
@@ -692,7 +693,91 @@ export const DEMO_COMPLAINTS: StudentComplaint[] = [
   },
 ];
 
-export const INITIAL_EXAMINATIONS: Examination[] = [];
+export const OFFICIAL_EXAM_TERMS = [
+  { id: 'exam-1st-monthly', name: '1st Monthly Test', category: '1st Monthly Test' as ExaminationCategory, defaultTotalMarks: 25 },
+  { id: 'exam-mid-term', name: 'Mid-Term Examination', category: 'Mid-Term Examination' as ExaminationCategory, defaultTotalMarks: 100 },
+  { id: 'exam-2nd-monthly', name: '2nd Monthly Test', category: '2nd Monthly Test' as ExaminationCategory, defaultTotalMarks: 25 },
+  { id: 'exam-final-term', name: 'Final Term Examination', category: 'Final Term Examination' as ExaminationCategory, defaultTotalMarks: 100 },
+];
+
+export const INITIAL_EXAMINATIONS: Examination[] = [
+  {
+    id: 'exam-1st-monthly',
+    academicYear: '2026-2027',
+    classId: 'c9',
+    sectionId: 'A',
+    name: '1st Monthly Test',
+    category: '1st Monthly Test',
+    date: '2026-09-15',
+    subjects: [
+      { subjectName: 'Mathematics', totalMarks: 25, passMarks: 15, teacherName: 'Mr. Farhan Zaidi' },
+      { subjectName: 'English Language & Literature', totalMarks: 25, passMarks: 15, teacherName: 'Ms. Aisha Siddiqui' },
+      { subjectName: 'Urdu', totalMarks: 25, passMarks: 15, teacherName: 'Mrs. Parveen Akhtar' },
+      { subjectName: 'Physics', totalMarks: 25, passMarks: 15, teacherName: 'Engr. Waqas Khan' },
+      { subjectName: 'Chemistry', totalMarks: 25, passMarks: 15, teacherName: 'Dr. Shahida Bano' },
+      { subjectName: 'Computer Science', totalMarks: 25, passMarks: 15, teacherName: 'Mr. Nabeel Sheikh' },
+      { subjectName: 'Islamiyat', totalMarks: 25, passMarks: 15, teacherName: 'Qari Muhammad Asif' },
+    ],
+    createdAt: '2026-09-01T08:00:00Z',
+  },
+  {
+    id: 'exam-mid-term',
+    academicYear: '2026-2027',
+    classId: 'c9',
+    sectionId: 'A',
+    name: 'Mid-Term Examination',
+    category: 'Mid-Term Examination',
+    date: '2026-10-20',
+    subjects: [
+      { subjectName: 'Mathematics', totalMarks: 100, passMarks: 60, teacherName: 'Mr. Farhan Zaidi' },
+      { subjectName: 'English Language & Literature', totalMarks: 100, passMarks: 60, teacherName: 'Ms. Aisha Siddiqui' },
+      { subjectName: 'Urdu', totalMarks: 100, passMarks: 60, teacherName: 'Mrs. Parveen Akhtar' },
+      { subjectName: 'Physics', totalMarks: 100, passMarks: 60, teacherName: 'Engr. Waqas Khan' },
+      { subjectName: 'Chemistry', totalMarks: 100, passMarks: 60, teacherName: 'Dr. Shahida Bano' },
+      { subjectName: 'Computer Science', totalMarks: 100, passMarks: 60, teacherName: 'Mr. Nabeel Sheikh' },
+      { subjectName: 'Islamiyat', totalMarks: 100, passMarks: 60, teacherName: 'Qari Muhammad Asif' },
+    ],
+    createdAt: '2026-10-01T08:00:00Z',
+  },
+  {
+    id: 'exam-2nd-monthly',
+    academicYear: '2026-2027',
+    classId: 'c9',
+    sectionId: 'A',
+    name: '2nd Monthly Test',
+    category: '2nd Monthly Test',
+    date: '2026-12-10',
+    subjects: [
+      { subjectName: 'Mathematics', totalMarks: 25, passMarks: 15, teacherName: 'Mr. Farhan Zaidi' },
+      { subjectName: 'English Language & Literature', totalMarks: 25, passMarks: 15, teacherName: 'Ms. Aisha Siddiqui' },
+      { subjectName: 'Urdu', totalMarks: 25, passMarks: 15, teacherName: 'Mrs. Parveen Akhtar' },
+      { subjectName: 'Physics', totalMarks: 25, passMarks: 15, teacherName: 'Engr. Waqas Khan' },
+      { subjectName: 'Chemistry', totalMarks: 25, passMarks: 15, teacherName: 'Dr. Shahida Bano' },
+      { subjectName: 'Computer Science', totalMarks: 25, passMarks: 15, teacherName: 'Mr. Nabeel Sheikh' },
+      { subjectName: 'Islamiyat', totalMarks: 25, passMarks: 15, teacherName: 'Qari Muhammad Asif' },
+    ],
+    createdAt: '2026-11-20T08:00:00Z',
+  },
+  {
+    id: 'exam-final-term',
+    academicYear: '2026-2027',
+    classId: 'c9',
+    sectionId: 'A',
+    name: 'Final Term Examination',
+    category: 'Final Term Examination',
+    date: '2027-03-20',
+    subjects: [
+      { subjectName: 'Mathematics', totalMarks: 100, passMarks: 60, teacherName: 'Mr. Farhan Zaidi' },
+      { subjectName: 'English Language & Literature', totalMarks: 100, passMarks: 60, teacherName: 'Ms. Aisha Siddiqui' },
+      { subjectName: 'Urdu', totalMarks: 100, passMarks: 60, teacherName: 'Mrs. Parveen Akhtar' },
+      { subjectName: 'Physics', totalMarks: 100, passMarks: 60, teacherName: 'Engr. Waqas Khan' },
+      { subjectName: 'Chemistry', totalMarks: 100, passMarks: 60, teacherName: 'Dr. Shahida Bano' },
+      { subjectName: 'Computer Science', totalMarks: 100, passMarks: 60, teacherName: 'Mr. Nabeel Sheikh' },
+      { subjectName: 'Islamiyat', totalMarks: 100, passMarks: 60, teacherName: 'Qari Muhammad Asif' },
+    ],
+    createdAt: '2027-02-15T08:00:00Z',
+  },
+];
 
 export const DEMO_EXAMINATIONS: Examination[] = [
   {

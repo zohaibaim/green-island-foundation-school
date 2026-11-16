@@ -15,26 +15,17 @@ import * as XLSX from 'xlsx';
 type StudentPayload = Omit<Student, 'id' | 'createdAt' | 'updatedAt'>;
 
 const TEMPLATE_COLUMNS: { key: string; required: boolean; example: string }[] = [
-  { key: 'Student Full Name', required: true, example: 'Muhammad Bilal' },
-  { key: 'Admission Number', required: false, example: 'GIFS-2026-0601' },
+  { key: 'Student Full Name', required: true, example: 'Danish Khan' },
+  { key: 'Admission Number', required: true, example: 'GIFS-2026-0501' },
   { key: 'Class', required: true, example: 'Class IX' },
   { key: 'Section', required: true, example: 'A' },
-  { key: 'Roll Number', required: true, example: '01' },
-  { key: 'Gender', required: false, example: 'Male' },
-  { key: 'Date of Birth', required: false, example: '2012-04-15' },
-  { key: 'Admission Date', required: false, example: '2026-08-01' },
-  { key: 'Academic Year', required: false, example: '2026-2027' },
-  { key: 'Father Name', required: true, example: 'Bilal Farooq' },
-  { key: 'Mother Name', required: false, example: 'Ayesha Bilal' },
-  { key: 'Guardian Name', required: false, example: 'Bilal Farooq' },
-  { key: 'Parent Contact Number', required: true, example: '0300-1122334' },
-  { key: 'Alternative Contact', required: false, example: '0321-4455667' },
-  { key: 'Emergency Contact', required: false, example: '0333-7788990' },
-  { key: 'Residential Address', required: false, example: 'Gulshan-e-Iqbal, Karachi' },
-  { key: 'Previous School', required: false, example: 'ABC Grammar School' },
+  { key: 'Roll Number', required: true, example: '12' },
+  { key: 'Gender', required: true, example: 'Male' },
+  { key: 'Date of Birth', required: true, example: '2012-04-15' },
+  { key: "Father's Name", required: true, example: 'Mansoor Khan' },
+  { key: 'Parent Contact Number', required: true, example: '0300-1234567' },
+  { key: 'Residential Address', required: true, example: 'Gulshan-e-Iqbal, Karachi' },
   { key: 'Medical Care & Allergies', required: false, example: 'None' },
-  { key: 'Special Educational Needs', required: false, example: 'None' },
-  { key: 'Remarks', required: false, example: 'Active in science club' },
 ];
 
 export const ExcelImportExport: React.FC<{ onNavigateToStudent: (id: string) => void }> = ({
@@ -186,57 +177,38 @@ export const ExcelImportExport: React.FC<{ onNavigateToStudent: (id: string) => 
     setValidatedStudents(checked);
   };
 
-  // Download Complete Sample Template with ALL Student Registration Headings
+  // Download Sample Template with the exact 11 Register New Student headings
   const handleDownloadTemplate = () => {
     const defaultClsName = defaultSelectedClass?.name || 'Class IX';
     const defaultSec = selectedSectionId || 'A';
     const secondSec = defaultSelectedClass?.sections[1] || defaultSec;
-    const today = new Date().toISOString().split('T')[0];
 
     const templateData = [
       {
-        'Student Full Name': 'Muhammad Bilal',
-        'Admission Number': 'GIFS-2026-0601',
+        'Student Full Name': 'Danish Khan',
+        'Admission Number': 'GIFS-2026-0501',
         'Class': defaultClsName,
         'Section': defaultSec,
         'Roll Number': '01',
         'Gender': 'Male',
         'Date of Birth': '2012-04-15',
-        'Admission Date': today,
-        'Academic Year': academicYear,
-        'Father Name': 'Bilal Farooq',
-        'Mother Name': 'Ayesha Bilal',
-        'Guardian Name': 'Bilal Farooq',
-        'Parent Contact Number': '0300-1122334',
-        'Alternative Contact': '0321-4455667',
-        'Emergency Contact': '0333-7788990',
-        'Residential Address': '144-D PECHS Block 2, Karachi',
-        'Previous School': 'City Grammar School',
+        "Father's Name": 'Mansoor Khan',
+        'Parent Contact Number': '0300-1234567',
+        'Residential Address': 'Gulshan-e-Iqbal, Karachi',
         'Medical Care & Allergies': 'None',
-        'Special Educational Needs': 'None',
-        'Remarks': 'Science club member',
       },
       {
         'Student Full Name': 'Fatima Zehra',
-        'Admission Number': 'GIFS-2026-0602',
+        'Admission Number': 'GIFS-2026-0502',
         'Class': defaultClsName,
         'Section': secondSec,
         'Roll Number': '02',
         'Gender': 'Female',
         'Date of Birth': '2012-07-22',
-        'Admission Date': today,
-        'Academic Year': academicYear,
-        'Father Name': 'Syed Ali Raza',
-        'Mother Name': 'Sadia Raza',
-        'Guardian Name': 'Syed Ali Raza',
+        "Father's Name": 'Syed Ali Raza',
         'Parent Contact Number': '0300-9988776',
-        'Alternative Contact': '',
-        'Emergency Contact': '0300-9988776',
         'Residential Address': 'Clifton Block 5, Karachi',
-        'Previous School': '',
         'Medical Care & Allergies': 'Mild asthma',
-        'Special Educational Needs': 'None',
-        'Remarks': '',
       },
     ];
 
@@ -249,19 +221,10 @@ export const ExcelImportExport: React.FC<{ onNavigateToStudent: (id: string) => 
       { wch: 12 }, // Roll Number
       { wch: 10 }, // Gender
       { wch: 14 }, // Date of Birth
-      { wch: 14 }, // Admission Date
-      { wch: 14 }, // Academic Year
-      { wch: 20 }, // Father Name
-      { wch: 18 }, // Mother Name
-      { wch: 18 }, // Guardian Name
+      { wch: 20 }, // Father's Name
       { wch: 20 }, // Parent Contact Number
-      { wch: 18 }, // Alternative Contact
-      { wch: 18 }, // Emergency Contact
       { wch: 28 }, // Residential Address
-      { wch: 20 }, // Previous School
       { wch: 24 }, // Medical Care & Allergies
-      { wch: 24 }, // Special Educational Needs
-      { wch: 22 }, // Remarks
     ];
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Students_Template');
@@ -638,11 +601,11 @@ export const ExcelImportExport: React.FC<{ onNavigateToStudent: (id: string) => 
             </div>
           </div>
 
-          {/* Complete Headings Breakdown */}
+          {/* Registration Headings Breakdown */}
           <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-950">
               <Info className="w-4 h-4 text-emerald-700 shrink-0" />
-              <span>All 20 Student Registration Headings Included in Excel Template:</span>
+              <span>Exact Student Registration Headings Included in Excel Template (11 Columns):</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {TEMPLATE_COLUMNS.map((col) => (
@@ -660,7 +623,7 @@ export const ExcelImportExport: React.FC<{ onNavigateToStudent: (id: string) => 
               ))}
             </div>
             <p className="text-[11px] text-emerald-800">
-              Required fields (*): Student Full Name, Class, Section, Roll Number, Father Name, Parent Contact Number. All other registration headings are optional and automatically saved to each student's portfolio.
+              Same fields as the Register New Student form. Medical Care & Allergies is optional; all other fields match your Student Registration form directly.
             </p>
           </div>
 

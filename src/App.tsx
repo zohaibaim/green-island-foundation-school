@@ -42,12 +42,6 @@ function AppContent() {
     return list.length;
   }, [dataVersion, activeTab]);
 
-  // Strict Security Gate: If user is not authenticated, DO NOT show the dashboard or any data!
-  // Immediately render the dedicated full-screen Login & Staff Registration portal.
-  if (!isAuthenticated || !currentUser) {
-    return <LoginModal isStandalone />;
-  }
-
   const isTabAllowedForRole = (tab: string): boolean => {
     if (currentRole === 'admin') return true;
     if (currentRole === 'principal') return tab !== 'system_settings';
@@ -61,10 +55,16 @@ function AppContent() {
   };
 
   useEffect(() => {
-    if (!isTabAllowedForRole(activeTab)) {
+    if (isAuthenticated && currentUser && !isTabAllowedForRole(activeTab)) {
       setActiveTab('dashboard');
     }
-  }, [currentRole, activeTab]);
+  }, [isAuthenticated, currentUser, currentRole, activeTab]);
+
+  // Strict Security Gate: If user is not authenticated, DO NOT show the dashboard or any data!
+  // Immediately render the dedicated full-screen Login & Staff Registration portal.
+  if (!isAuthenticated || !currentUser) {
+    return <LoginModal isStandalone />;
+  }
 
   const handleSelectStudent = (id: string) => {
     if (currentRole === 'subject_teacher') return;
@@ -307,10 +307,62 @@ function AppContent() {
   );
 }
 
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; errorMsg: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, errorMsg: '' };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, errorMsg: error?.message || 'Unexpected rendering error' };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-lg max-w-md w-full p-6 text-center space-y-4">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center mx-auto font-bold text-lg">
+              !
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">Portal Display Interrupted</h2>
+            <p className="text-xs text-slate-600">{this.state.errorMsg}</p>
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl"
+              >
+                Reload Portal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem('gifs_active_user_id');
+                  window.location.reload();
+                }}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl"
+              >
+                Reset Session & Login
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 }

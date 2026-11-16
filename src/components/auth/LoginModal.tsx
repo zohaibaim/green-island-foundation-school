@@ -74,6 +74,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
     });
   };
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollToTop = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   if (!isStandalone && !isLoginModalOpen) return null;
 
   // Handle Login Submission
@@ -102,14 +110,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
         ? prev.filter((s) => s !== subjectName)
         : [...prev, subjectName]
     );
-  };
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const scrollToTop = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
   };
 
   // Handle Sign Up Submission

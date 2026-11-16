@@ -21,25 +21,34 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
 }) => {
   const { canMarkAttendance, currentUser } = useAuth();
   const classes = StorageService.getClasses();
-  const allStudents = StorageService.getStudents();
+  const [allStudents, setAllStudents] = useState<Student[]>(() => StorageService.getStudents());
+
+  React.useEffect(() => {
+    setAllStudents(StorageService.getStudents());
+  }, []);
 
   // Determine initial class and section based on teacher assignment if available
+  const initialClassToken = currentUser?.inChargeClass || currentUser?.assignedClasses?.[0] || '';
+
   const initialClassId = useMemo(() => {
-    if (currentUser?.assignedClasses && currentUser.assignedClasses.length > 0) {
-      const match = currentUser.assignedClasses[0].split('-')[0];
+    if (initialClassToken) {
+      const lastDash = initialClassToken.lastIndexOf('-');
+      const match = lastDash > -1 ? initialClassToken.slice(0, lastDash).trim() : initialClassToken;
       const found = classes.find((c) => c.name.toLowerCase() === match.toLowerCase() || c.id === match);
       if (found) return found.id;
     }
     return classes[0]?.id || 'c9';
-  }, [currentUser, classes]);
+  }, [initialClassToken, classes]);
 
   const initialSectionId = useMemo(() => {
-    if (currentUser?.assignedClasses && currentUser.assignedClasses.length > 0) {
-      const parts = currentUser.assignedClasses[0].split('-');
-      if (parts[1]) return parts[1].trim().toUpperCase().replace(/^SECTION\s+/i, '');
+    if (initialClassToken) {
+      const lastDash = initialClassToken.lastIndexOf('-');
+      if (lastDash > -1) {
+        return initialClassToken.slice(lastDash + 1).trim().toUpperCase().replace(/^SECTION\s+/i, '');
+      }
     }
-    return 'A';
-  }, [currentUser]);
+    return classes[0]?.sections[0] || 'A';
+  }, [initialClassToken, classes]);
 
   // State
   const [selectedClassId, setSelectedClassId] = useState<string>(initialClassId);
@@ -49,12 +58,26 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
   });
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string>('');
 
+  const selectedClass = classes.find((c) => c.id === selectedClassId) || classes[0];
+  const availableSections = selectedClass?.sections || ['A', 'B', 'C', 'D'];
+
+  const handleClassChange = (newClassId: string) => {
+    setSelectedClassId(newClassId);
+    const cls = classes.find((c) => c.id === newClassId);
+    if (cls && cls.sections.length > 0 && !cls.sections.includes(selectedSectionId)) {
+      setSelectedSectionId(cls.sections[0]);
+    }
+  };
+
   // Filter students belonging to this class & section
   const targetStudents = useMemo(() => {
     return allStudents.filter(
       (s) => s.classId === selectedClassId && s.sectionId === selectedSectionId && s.status === 'Active'
     );
   }, [allStudents, selectedClassId, selectedSectionId]);
+
+  const targetStudentsKey = useMemo(() => targetStudents.map((s) => s.id).join(','), [targetStudents]);
+  const isEditable = canMarkAttendance(selectedClassId, selectedSectionId);
 
   // Load existing records or initialize with Default Present System
   const [attendanceMap, setAttendanceMap] = useState<Record<string, {
@@ -67,14 +90,14 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
 
   const [isVerified, setIsVerified] = useState<boolean>(false);
 
-  // Load attendance whenever date or class changes
+  // Load attendance whenever date, class, section, or roster changes
   React.useEffect(() => {
     const existing = StorageService.getAttendance().filter(
       (a) => a.classId === selectedClassId && a.sectionId === selectedSectionId && a.date === selectedDate
     );
 
     const newMap: Record<string, any> = {};
-    let allFinalized = existing.length > 0;
+    let allFinalized = targetStudents.length > 0 && existing.length > 0;
 
     targetStudents.forEach((std) => {
       const match = existing.find((e) => e.studentId === std.id);
@@ -88,7 +111,6 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
         };
         if (!match.isVerified) allFinalized = false;
       } else {
-        // Section 10.1: Default Present System
         newMap[std.id] = {
           status: 'Present',
           arrivalTime: '07:45 AM',
@@ -102,28 +124,40 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
 
     setAttendanceMap(newMap);
     setIsVerified(allFinalized);
-  }, [selectedClassId, selectedSectionId, selectedDate, targetStudents]);
+  }, [selectedClassId, selectedSectionId, selectedDate, targetStudentsKey]);
 
-  // Quick status toggle
-  const updateStudentStatus = (studentId: string, status: AttendanceStatus) => {
-    setAttendanceMap((prev) => ({
-      ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        status,
-        reason: status === 'Absent' ? 'Unexplained absence' : prev[studentId]?.reason || '',
-      },
-    }));
+  const defaultAttendanceEntry = {
+    status: 'Present' as AttendanceStatus,
+    arrivalTime: '07:45 AM',
+    lateDurationMinutes: 0,
+    reason: '',
+    remarks: '',
   };
 
-  // Mark All Present (Quick helper)
-  const handleMarkAllPresent = () => {
+  // Update student status via dropdown
+  const updateStudentStatus = (studentId: string, status: AttendanceStatus) => {
+    setAttendanceMap((prev) => {
+      const current = prev[studentId] || defaultAttendanceEntry;
+      return {
+        ...prev,
+        [studentId]: {
+          ...current,
+          status,
+          reason: status === 'Absent' ? (current.reason || 'Unexplained absence') : current.reason,
+        },
+      };
+    });
+  };
+
+  // Bulk apply status to all students
+  const handleBulkSetStatus = (status: AttendanceStatus) => {
     const updated: Record<string, any> = {};
     targetStudents.forEach((std) => {
+      const prevEntry = attendanceMap[std.id] || defaultAttendanceEntry;
       updated[std.id] = {
-        ...attendanceMap[std.id],
-        status: 'Present',
-        reason: '',
+        ...prevEntry,
+        status,
+        reason: status === 'Present' ? '' : prevEntry.reason,
       };
     });
     setAttendanceMap(updated);
@@ -131,8 +165,9 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
 
   // Save / Finalize Attendance
   const handleSaveAttendance = (finalize: boolean) => {
+    if (!isEditable || targetStudents.length === 0) return;
     const recordsToSave: Omit<AttendanceRecord, 'id' | 'updatedAt'>[] = targetStudents.map((std) => {
-      const entry = attendanceMap[std.id] || { status: 'Present', arrivalTime: '07:45 AM', reason: '', remarks: '' };
+      const entry = attendanceMap[std.id] || defaultAttendanceEntry;
       return {
         studentId: std.id,
         studentName: std.name,
@@ -167,7 +202,20 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
     return contactList.filter((item) => item.alerts.some((a) => a.category === 'Consecutive Absence'));
   }, [attendanceMap]);
 
-  const selectedClass = classes.find((c) => c.id === selectedClassId);
+  const statusBadgeColor = (st: AttendanceStatus) => {
+    switch (st) {
+      case 'Present':
+        return 'bg-emerald-50 text-emerald-800 border-emerald-300';
+      case 'Absent':
+        return 'bg-rose-50 text-rose-800 border-rose-300';
+      case 'Late':
+        return 'bg-amber-50 text-amber-800 border-amber-300';
+      case 'Leave':
+        return 'bg-blue-50 text-blue-800 border-blue-300';
+      case 'Half Day':
+        return 'bg-purple-50 text-purple-800 border-purple-300';
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -184,7 +232,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
                   Daily Attendance Management
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Default Present System (Section 10.1) • Teachers only mark absent, late, or leave
+                  Select student attendance status from the dropdown list (Present, Absent, Late, Leave, Half Day)
                 </p>
               </div>
             </div>
@@ -215,7 +263,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
         </div>
 
         {/* Date & Class Selectors */}
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-center gap-3 text-xs">
+        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-wrap items-end gap-3 text-xs">
           <div>
             <label className="block text-slate-500 mb-1 font-semibold">Attendance Date</label>
             <input
@@ -230,7 +278,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
             <label className="block text-slate-500 mb-1 font-semibold">Select Class</label>
             <select
               value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
+              onChange={(e) => handleClassChange(e.target.value)}
               className="p-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold text-xs text-slate-800"
             >
               {classes.map((c) => (
@@ -248,30 +296,62 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
               onChange={(e) => setSelectedSectionId(e.target.value)}
               className="p-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold text-xs text-slate-800"
             >
-              <option value="A">Section A</option>
-              <option value="B">Section B</option>
-              <option value="C">Section C</option>
-              <option value="D">Section D</option>
+              {availableSections.map((sec) => (
+                <option key={sec} value={sec}>
+                  Section {sec}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-slate-500 mb-1 font-semibold">Bulk Set All</label>
+            <select
+              defaultValue=""
+              disabled={!isEditable || targetStudents.length === 0}
+              onChange={(e) => {
+                if (e.target.value) {
+                  handleBulkSetStatus(e.target.value as AttendanceStatus);
+                  e.target.value = '';
+                }
+              }}
+              className="p-2 rounded-xl border border-slate-300 bg-slate-50 font-semibold text-xs text-slate-800 disabled:opacity-50"
+            >
+              <option value="">-- Bulk Set All --</option>
+              <option value="Present">Set All Present</option>
+              <option value="Absent">Set All Absent</option>
+              <option value="Late">Set All Late</option>
+              <option value="Leave">Set All Leave</option>
+              <option value="Half Day">Set All Half Day</option>
             </select>
           </div>
 
           <div className="w-full sm:w-auto flex flex-wrap items-center gap-2 mt-2 sm:mt-0 sm:ml-auto">
             <button
-              onClick={handleMarkAllPresent}
-              className="flex-1 sm:flex-none px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors text-center"
+              type="button"
+              onClick={() => handleBulkSetStatus('Present')}
+              disabled={!isEditable || targetStudents.length === 0}
+              className="flex-1 sm:flex-none px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-colors text-center disabled:opacity-50"
             >
-              Reset All to Present
+              Reset All Present
             </button>
             <button
+              type="button"
               onClick={() => handleSaveAttendance(true)}
-              disabled={!canMarkAttendance(selectedClassId, selectedSectionId)}
-              className="flex-1 sm:flex-none px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+              disabled={!isEditable || targetStudents.length === 0}
+              className="flex-1 sm:flex-none px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
             >
               <Check className="w-4 h-4" />
               <span>Verify & Finalize</span>
             </button>
           </div>
         </div>
+
+        {!isEditable && (
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-xs font-semibold">
+            View-Only Notice: You are only authorized to mark daily attendance for your assigned In-Charge Class & Section ({initialClassToken || 'None'}).
+          </div>
+        )}
 
         {saveSuccessMsg && (
           <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-semibold flex items-center gap-2">
@@ -345,7 +425,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
             Class Roster: <strong>{selectedClass?.name} - Section {selectedSectionId}</strong> ({targetStudents.length} Students)
           </span>
           <span className="text-slate-500">
-            Click status pill to toggle: Present / Absent / Late / Leave / Half Day
+            Use dropdown list: Present / Absent / Late / Leave / Half Day
           </span>
         </div>
 
@@ -355,7 +435,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
               <tr>
                 <th className="py-2.5 px-4">Roll #</th>
                 <th className="py-2.5 px-3">Student Name</th>
-                <th className="py-2.5 px-3">Attendance Status (Interactive)</th>
+                <th className="py-2.5 px-3">Attendance Status</th>
                 <th className="py-2.5 px-3">Arrival Time</th>
                 <th className="py-2.5 px-3">Absence Reason / Notes</th>
                 <th className="py-2.5 px-4 text-right">Portfolio</th>
@@ -370,12 +450,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
                 </tr>
               ) : (
                 targetStudents.map((std) => {
-                  const entry = attendanceMap[std.id] || {
-                    status: 'Present',
-                    arrivalTime: '07:45 AM',
-                    reason: '',
-                    remarks: '',
-                  };
+                  const entry = attendanceMap[std.id] || defaultAttendanceEntry;
 
                   return (
                     <tr key={std.id} className="hover:bg-slate-50 transition-colors">
@@ -389,45 +464,31 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
                       </td>
 
                       <td className="py-3 px-3">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {(['Present', 'Absent', 'Late', 'Leave', 'Half Day'] as AttendanceStatus[]).map((st) => {
-                            const isSelected = entry.status === st;
-                            return (
-                              <button
-                                key={st}
-                                type="button"
-                                onClick={() => updateStudentStatus(std.id, st)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                                  isSelected
-                                    ? st === 'Present'
-                                      ? 'bg-emerald-600 text-white shadow-xs'
-                                      : st === 'Absent'
-                                      ? 'bg-rose-600 text-white shadow-xs'
-                                      : st === 'Late'
-                                      ? 'bg-amber-500 text-white shadow-xs'
-                                      : st === 'Leave'
-                                      ? 'bg-blue-600 text-white shadow-xs'
-                                      : 'bg-purple-600 text-white shadow-xs'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                }`}
-                              >
-                                {st}
-                              </button>
-                            );
-                          })}
-                        </div>
+                        <select
+                          value={entry.status}
+                          disabled={!isEditable}
+                          onChange={(e) => updateStudentStatus(std.id, e.target.value as AttendanceStatus)}
+                          className={`p-1.5 px-2.5 rounded-lg border text-xs font-bold cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-60 ${statusBadgeColor(entry.status)}`}
+                        >
+                          <option value="Present">Present</option>
+                          <option value="Absent">Absent</option>
+                          <option value="Late">Late</option>
+                          <option value="Leave">Leave</option>
+                          <option value="Half Day">Half Day</option>
+                        </select>
                       </td>
 
                       <td className="py-3 px-3">
                         {entry.status === 'Late' ? (
                           <input
                             type="text"
+                            disabled={!isEditable}
                             value={entry.arrivalTime || '08:15 AM'}
                             onChange={(e) => {
                               const val = e.target.value;
                               setAttendanceMap((prev) => ({
                                 ...prev,
-                                [std.id]: { ...prev[std.id], arrivalTime: val },
+                                [std.id]: { ...(prev[std.id] || defaultAttendanceEntry), arrivalTime: val },
                               }));
                             }}
                             className="p-1 px-2 border border-slate-300 rounded text-xs w-24 font-mono"
@@ -442,13 +503,14 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
                       <td className="py-3 px-3">
                         <input
                           type="text"
+                          disabled={!isEditable}
                           placeholder={entry.status === 'Absent' ? 'Specify reason for absence...' : 'Optional remark...'}
                           value={entry.reason || ''}
                           onChange={(e) => {
                             const val = e.target.value;
                             setAttendanceMap((prev) => ({
                               ...prev,
-                              [std.id]: { ...prev[std.id], reason: val },
+                              [std.id]: { ...(prev[std.id] || defaultAttendanceEntry), reason: val },
                             }));
                           }}
                           className={`p-1 px-2 rounded text-xs w-full max-w-xs border ${

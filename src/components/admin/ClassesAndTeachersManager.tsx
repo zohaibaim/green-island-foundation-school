@@ -84,6 +84,8 @@ export const ClassesAndTeachersManager: React.FC = () => {
     designation: '',
     role: 'class_teacher' as UserRole,
     assignedClass: 'Class IX-A',
+    selectedTeachingClasses: ['Class IX-A'] as string[],
+    isAlsoSubjectTeacher: true,
     selectedSubjectNames: ['Mathematics'] as string[],
   });
 
@@ -317,6 +319,26 @@ export const ClassesAndTeachersManager: React.FC = () => {
     }));
   };
 
+  const toggleTeachingClassInForm = (classToken: string) => {
+    setTeacherForm((prev) => ({
+      ...prev,
+      selectedTeachingClasses: prev.selectedTeachingClasses.includes(classToken)
+        ? prev.selectedTeachingClasses.filter((c) => c !== classToken)
+        : [...prev.selectedTeachingClasses, classToken],
+    }));
+  };
+
+  const toggleAllSectionsInForm = (className: string, sections: string[]) => {
+    const tokens = sections.map((sec) => `${className}-${sec}`);
+    setTeacherForm((prev) => {
+      const allSelected = tokens.every((t) => prev.selectedTeachingClasses.includes(t));
+      const next = allSelected
+        ? prev.selectedTeachingClasses.filter((t) => !tokens.includes(t))
+        : Array.from(new Set([...prev.selectedTeachingClasses, ...tokens]));
+      return { ...prev, selectedTeachingClasses: next };
+    });
+  };
+
   const handleOpenAddTeacher = () => {
     setEditingTeacher(null);
     setTeacherForm({
@@ -328,6 +350,8 @@ export const ClassesAndTeachersManager: React.FC = () => {
       designation: '',
       role: 'class_teacher',
       assignedClass: 'Class IX-A',
+      selectedTeachingClasses: ['Class IX-A'],
+      isAlsoSubjectTeacher: true,
       selectedSubjectNames: ['Mathematics'],
     });
     setIsTeacherModalOpen(true);
@@ -338,8 +362,11 @@ export const ClassesAndTeachersManager: React.FC = () => {
     const subjectsList =
       u.selectedSubjectNames ||
       (u.assignedSubjects && u.assignedSubjects.length > 0
-        ? u.assignedSubjects.map((s) => s.subjectName)
-        : ['Mathematics']);
+        ? Array.from(new Set(u.assignedSubjects.map((s) => s.subjectName)))
+        : []);
+
+    const hasSubjectDuties = subjectsList.length > 0;
+    const assignedClsList = u.assignedClasses && u.assignedClasses.length > 0 ? u.assignedClasses : ['Class IX-A'];
 
     setTeacherForm({
       name: u.name,
@@ -349,8 +376,10 @@ export const ClassesAndTeachersManager: React.FC = () => {
       phone: u.phone || '',
       designation: u.designation,
       role: u.role,
-      assignedClass: u.assignedClasses?.[0] || 'Class IX-A',
-      selectedSubjectNames: subjectsList,
+      assignedClass: u.inChargeClass || assignedClsList[0] || 'Class IX-A',
+      selectedTeachingClasses: assignedClsList,
+      isAlsoSubjectTeacher: u.role === 'class_teacher' ? (u.isDualTeacher ?? hasSubjectDuties) : hasSubjectDuties,
+      selectedSubjectNames: subjectsList.length > 0 ? subjectsList : ['Mathematics'],
     });
     setIsTeacherModalOpen(true);
   };
@@ -362,15 +391,60 @@ export const ClassesAndTeachersManager: React.FC = () => {
       return;
     }
 
-    const assignedClasses = teacherForm.role === 'class_teacher' ? [teacherForm.assignedClass] : undefined;
-    const assignedSubjects =
-      teacherForm.role === 'subject_teacher'
-        ? teacherForm.selectedSubjectNames.map((s) => ({
-            classId: 'c9',
-            sectionId: 'A',
-            subjectName: s,
-          }))
-        : undefined;
+    const resolveClassToken = (token: string) => {
+      const lastDash = token.lastIndexOf('-');
+      const clsName = lastDash > -1 ? token.slice(0, lastDash).trim() : token;
+      const secId = lastDash > -1 ? token.slice(lastDash + 1).trim().toUpperCase() : 'A';
+      const matchedCls = classes.find((c) => c.name.toLowerCase() === clsName.toLowerCase() || c.id === clsName);
+      return {
+        classId: matchedCls?.id || 'c9',
+        className: matchedCls?.name || clsName,
+        sectionId: secId,
+      };
+    };
+
+    let assignedClasses: string[] | undefined;
+    let assignedSubjects: { classId?: string; sectionId?: string; className?: string; subjectName: string }[] | undefined;
+    let selectedSubjectNames: string[] | undefined;
+
+    if (teacherForm.role === 'class_teacher') {
+      const teachingTokens = teacherForm.isAlsoSubjectTeacher
+        ? Array.from(new Set([teacherForm.assignedClass, ...teacherForm.selectedTeachingClasses]))
+        : [teacherForm.assignedClass];
+      assignedClasses = teachingTokens;
+      if (teacherForm.isAlsoSubjectTeacher && teacherForm.selectedSubjectNames.length > 0) {
+        selectedSubjectNames = teacherForm.selectedSubjectNames;
+        assignedSubjects = teachingTokens.flatMap((token) => {
+          const res = resolveClassToken(token);
+          return teacherForm.selectedSubjectNames.map((subj) => ({
+            classId: res.classId,
+            sectionId: res.sectionId,
+            className: res.className,
+            subjectName: subj,
+          }));
+        });
+      }
+    } else if (teacherForm.role === 'subject_teacher') {
+      const teachingTokens =
+        teacherForm.selectedTeachingClasses.length > 0 ? teacherForm.selectedTeachingClasses : ['Class IX-A'];
+      assignedClasses = teachingTokens;
+      selectedSubjectNames = teacherForm.selectedSubjectNames;
+      assignedSubjects = teachingTokens.flatMap((token) => {
+        const res = resolveClassToken(token);
+        return teacherForm.selectedSubjectNames.map((subj) => ({
+          classId: res.classId,
+          sectionId: res.sectionId,
+          className: res.className,
+          subjectName: subj,
+        }));
+      });
+    }
+
+    const inChargeClass = teacherForm.role === 'class_teacher' ? teacherForm.assignedClass : undefined;
+    const isDualTeacher =
+      teacherForm.role === 'class_teacher' &&
+      teacherForm.isAlsoSubjectTeacher &&
+      teacherForm.selectedSubjectNames.length > 0;
 
     if (editingTeacher) {
       StorageService.updateUser(editingTeacher.id, {
@@ -382,10 +456,12 @@ export const ClassesAndTeachersManager: React.FC = () => {
         isActive: teacherForm.isActive,
         password: teacherForm.password.trim() || editingTeacher.password || 'teacher123',
         assignedClasses,
+        inChargeClass,
+        isDualTeacher,
         assignedSubjects,
-        selectedSubjectNames: teacherForm.role === 'subject_teacher' ? teacherForm.selectedSubjectNames : undefined,
+        selectedSubjectNames,
       });
-      showNotification(`Staff account "${teacherForm.name}" updated with credentials.`);
+      showNotification(`Staff account "${teacherForm.name}" updated with permissions & credentials.`);
     } else {
       StorageService.addUser({
         name: teacherForm.name,
@@ -396,8 +472,10 @@ export const ClassesAndTeachersManager: React.FC = () => {
         isActive: teacherForm.isActive,
         password: teacherForm.password.trim() || 'teacher123',
         assignedClasses,
+        inChargeClass,
+        isDualTeacher,
         assignedSubjects,
-        selectedSubjectNames: teacherForm.role === 'subject_teacher' ? teacherForm.selectedSubjectNames : undefined,
+        selectedSubjectNames,
       });
       showNotification(`New staff account created for "${teacherForm.name}". Password set.`);
     }
@@ -1028,12 +1106,23 @@ export const ClassesAndTeachersManager: React.FC = () => {
 
                     {u.assignedClasses && u.assignedClasses.length > 0 && (
                       <div className="pt-2 border-t border-slate-100">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-0.5">
-                          Class Teacher Assignment:
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
+                          {u.role === 'class_teacher' ? 'In-Charge & Teaching Classes:' : 'Assigned Teaching Classes:'}
                         </span>
-                        <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-bold">
-                          {u.assignedClasses.join(', ')}
-                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {u.assignedClasses.map((clsTok, idx) => (
+                            <span
+                              key={idx}
+                              className={`px-2 py-0.5 rounded font-bold text-[10px] ${
+                                u.role === 'class_teacher' && idx === 0
+                                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                  : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              }`}
+                            >
+                              {clsTok}{u.role === 'class_teacher' && idx === 0 ? ' (Homeroom)' : ''}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
 
@@ -1042,13 +1131,15 @@ export const ClassesAndTeachersManager: React.FC = () => {
                       (u.assignedSubjects && u.assignedSubjects.length > 0)) && (
                       <div className="pt-2 border-t border-slate-100">
                         <span className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                          Teaching Subjects ({u.selectedSubjectNames?.length || u.assignedSubjects?.length || 0}):
+                          Teaching Subjects ({Array.from(new Set(u.selectedSubjectNames || u.assignedSubjects?.map((as) => as.subjectName) || [])).length}):
                         </span>
                         <div className="flex flex-wrap gap-1">
-                          {(
-                            u.selectedSubjectNames ||
-                            u.assignedSubjects?.map((as) => as.subjectName) ||
-                            []
+                          {Array.from(
+                            new Set(
+                              u.selectedSubjectNames ||
+                                u.assignedSubjects?.map((as) => as.subjectName) ||
+                                []
+                            )
                           ).map((name, i) => (
                             <span
                               key={i}
@@ -1540,8 +1631,8 @@ export const ClassesAndTeachersManager: React.FC = () => {
       {/* MODAL 4: ADD / EDIT TEACHER / STAFF ACCOUNT */}
       {/* ------------------------------------------------------------- */}
       {isTeacherModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-5 sm:p-6 space-y-4 text-xs max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-base font-bold text-slate-900">
                 {editingTeacher ? `Edit Staff Account: ${editingTeacher.name}` : 'Register New Teacher / Staff Account'}
@@ -1617,57 +1708,181 @@ export const ClassesAndTeachersManager: React.FC = () => {
               </div>
 
               {teacherForm.role === 'class_teacher' && (
-                <div>
-                  <label className="block text-slate-600 font-semibold mb-1">Assigned Class & Section *</label>
-                  <select
-                    value={teacherForm.assignedClass}
-                    onChange={(e) => setTeacherForm({ ...teacherForm, assignedClass: e.target.value })}
-                    className="w-full p-2 border border-slate-300 rounded-lg font-bold text-emerald-800"
-                  >
-                    {classes.flatMap((c) =>
-                      c.sections.map((sec) => (
-                        <option key={`${c.name}-${sec}`} value={`${c.name}-${sec}`}>
-                          {c.name} - Section {sec}
-                        </option>
-                      ))
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-slate-600 font-semibold mb-1">In-Charge Class & Section (Homeroom) *</label>
+                    <select
+                      value={teacherForm.assignedClass}
+                      onChange={(e) => setTeacherForm({ ...teacherForm, assignedClass: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg font-bold text-emerald-800"
+                    >
+                      {classes.flatMap((c) =>
+                        c.sections.map((sec) => (
+                          <option key={`${c.name}-${sec}`} value={`${c.name}-${sec}`}>
+                            {c.name} - Section {sec}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  <div className="p-3 bg-blue-50/50 border border-blue-200 rounded-xl space-y-2">
+                    <label className="flex items-center gap-2 cursor-pointer font-bold text-blue-950 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={teacherForm.isAlsoSubjectTeacher}
+                        onChange={(e) =>
+                          setTeacherForm({ ...teacherForm, isAlsoSubjectTeacher: e.target.checked })
+                        }
+                        className="w-4 h-4 text-blue-600 rounded border-slate-300"
+                      />
+                      <span>Also Assign Subject Teacher Duties (Marks Entry & Subject Monitoring)</span>
+                    </label>
+
+                    {teacherForm.isAlsoSubjectTeacher && (
+                      <div className="space-y-2 pt-1 border-t border-blue-200/70">
+                        <label className="block text-blue-950 font-bold text-[11px]">
+                          Teaching Subjects ({teacherForm.selectedSubjectNames.length} Selected):
+                        </label>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-28 overflow-y-auto p-1 bg-white rounded-lg border border-blue-200">
+                          {subjects.map((s) => {
+                            const isSelected = teacherForm.selectedSubjectNames.includes(s.name);
+                            return (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => toggleSubjectInForm(s.name)}
+                                className={`flex items-center justify-between p-1.5 rounded text-left text-[11px] font-semibold border ${
+                                  isSelected
+                                    ? 'bg-blue-600 text-white border-blue-700'
+                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                                }`}
+                              >
+                                <span className="truncate">{s.name}</span>
+                                {isSelected && <Check className="w-3 h-3 shrink-0 ml-1" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <label className="block text-blue-950 font-bold text-[11px]">
+                          Teaching Classes & Sections (Homeroom Included):
+                        </label>
+                        <div className="max-h-28 overflow-y-auto p-1.5 bg-white rounded-lg border border-blue-200 space-y-1">
+                          {classes.map((cls) => (
+                            <div key={cls.id} className="flex flex-wrap items-center gap-1 pb-1 border-b border-slate-100 last:border-b-0">
+                              <button
+                                type="button"
+                                onClick={() => toggleAllSectionsInForm(cls.name, cls.sections)}
+                                className="text-[10px] font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded min-w-[70px] text-left"
+                              >
+                                {cls.name}
+                              </button>
+                              {cls.sections.map((sec) => {
+                                const token = `${cls.name}-${sec}`;
+                                const isHomeroom = token === teacherForm.assignedClass;
+                                const isSelected = isHomeroom || teacherForm.selectedTeachingClasses.includes(token);
+                                return (
+                                  <button
+                                    key={token}
+                                    type="button"
+                                    onClick={() => !isHomeroom && toggleTeachingClassInForm(token)}
+                                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                      isHomeroom
+                                        ? 'bg-emerald-600 text-white border-emerald-700'
+                                        : isSelected
+                                        ? 'bg-blue-600 text-white border-blue-700'
+                                        : 'bg-slate-50 text-slate-600 border-slate-200'
+                                    }`}
+                                  >
+                                    {sec}{isHomeroom ? ' ★' : ''}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
-                  </select>
+                  </div>
                 </div>
               )}
 
               {teacherForm.role === 'subject_teacher' && (
-                <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-blue-950 font-bold text-xs flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-blue-700" />
-                      <span>Assigned Teaching Subjects (Multiple Allowed) *</span>
-                    </label>
-                    <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full">
-                      {teacherForm.selectedSubjectNames.length} Selected
-                    </span>
+                <div className="space-y-3">
+                  <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-emerald-950 font-bold text-xs flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Assigned Classes & Sections (Multiple Allowed) *</span>
+                      </label>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        {teacherForm.selectedTeachingClasses.length} Selected
+                      </span>
+                    </div>
+                    <div className="max-h-32 overflow-y-auto p-1.5 bg-white rounded-lg border border-emerald-200 space-y-1">
+                      {classes.map((cls) => (
+                        <div key={cls.id} className="flex flex-wrap items-center gap-1 pb-1 border-b border-slate-100 last:border-b-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleAllSectionsInForm(cls.name, cls.sections)}
+                            className="text-[10px] font-bold text-slate-700 bg-slate-100 hover:bg-emerald-100 px-1.5 py-0.5 rounded min-w-[70px] text-left"
+                          >
+                            {cls.name}
+                          </button>
+                          {cls.sections.map((sec) => {
+                            const token = `${cls.name}-${sec}`;
+                            const isSelected = teacherForm.selectedTeachingClasses.includes(token);
+                            return (
+                              <button
+                                key={token}
+                                type="button"
+                                onClick={() => toggleTeachingClassInForm(token)}
+                                className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                  isSelected
+                                    ? 'bg-emerald-600 text-white border-emerald-700'
+                                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                                }`}
+                              >
+                                Sec {sec}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-[10px] text-blue-800">
-                    Click subjects to select or unselect. Multiple subjects can be assigned to one teacher:
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-white rounded-lg border border-blue-200">
-                    {subjects.map((s) => {
-                      const isSelected = teacherForm.selectedSubjectNames.includes(s.name);
-                      return (
-                        <button
-                          key={s.id}
-                          type="button"
-                          onClick={() => toggleSubjectInForm(s.name)}
-                          className={`flex items-center justify-between p-1.5 rounded text-left text-[11px] font-semibold transition-all border ${
-                            isSelected
-                              ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <span className="truncate">{s.name}</span>
-                          {isSelected && <Check className="w-3 h-3 shrink-0 ml-1" />}
-                        </button>
-                      );
-                    })}
+
+                  <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-blue-950 font-bold text-xs flex items-center gap-1.5">
+                        <BookOpen className="w-3.5 h-3.5 text-blue-700" />
+                        <span>Assigned Teaching Subjects (Multiple Allowed) *</span>
+                      </label>
+                      <span className="text-[10px] font-bold text-blue-800 bg-blue-100 px-2 py-0.5 rounded-full">
+                        {teacherForm.selectedSubjectNames.length} Selected
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto p-1 bg-white rounded-lg border border-blue-200">
+                      {subjects.map((s) => {
+                        const isSelected = teacherForm.selectedSubjectNames.includes(s.name);
+                        return (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => toggleSubjectInForm(s.name)}
+                            className={`flex items-center justify-between p-1.5 rounded text-left text-[11px] font-semibold transition-all border ${
+                              isSelected
+                                ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span className="truncate">{s.name}</span>
+                            {isSelected && <Check className="w-3 h-3 shrink-0 ml-1" />}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}

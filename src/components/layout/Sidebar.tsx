@@ -162,8 +162,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       return !disallowed.includes(item.id);
     }
     if (currentRole === 'subject_teacher') {
-      // Subject Teacher: Daily books & notebook monitoring, discipline complaints, exam marks, student roster, reports
-      const allowed = ['dashboard', 'students', 'academics', 'monitoring', 'complaints', 'reports'];
+      // Subject Teacher: Strictly authorized for assigned Exam Marks, Books & Homework Tracker, and Discipline Complaints
+      const allowed = ['dashboard', 'academics', 'monitoring', 'complaints'];
       return allowed.includes(item.id);
     }
     // Visitor / General

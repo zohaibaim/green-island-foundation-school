@@ -44,6 +44,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
   const [signupDesignation, setSignupDesignation] = useState('');
   const [signupRole, setSignupRole] = useState<UserRole>('subject_teacher');
   const [signupClass, setSignupClass] = useState('Class IX-A');
+  const [signupTeachingClasses, setSignupTeachingClasses] = useState<string[]>(['Class IX-A']);
+  const [isAlsoSubjectTeacher, setIsAlsoSubjectTeacher] = useState<boolean>(true);
   const [signupSubjects, setSignupSubjects] = useState<string[]>(['Mathematics']);
   const [signupPassword, setSignupPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -53,6 +55,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
   // School Curriculum Classes & Subjects
   const classes = StorageService.getClasses();
   const allSubjects = StorageService.getSubjects();
+
+  const toggleTeachingClass = (classToken: string) => {
+    setSignupTeachingClasses((prev) =>
+      prev.includes(classToken) ? prev.filter((c) => c !== classToken) : [...prev, classToken]
+    );
+  };
+
+  const toggleAllSectionsOfClass = (className: string, sections: string[]) => {
+    const tokens = sections.map((sec) => `${className}-${sec}`);
+    const allSelected = tokens.every((t) => signupTeachingClasses.includes(t));
+    setSignupTeachingClasses((prev) => {
+      if (allSelected) {
+        return prev.filter((t) => !tokens.includes(t));
+      }
+      const next = new Set([...prev, ...tokens]);
+      return Array.from(next);
+    });
+  };
 
   if (!isStandalone && !isLoginModalOpen) return null;
 
@@ -127,8 +147,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
       return;
     }
 
-    if (signupRole === 'subject_teacher' && signupSubjects.length === 0) {
-      setErrorMsg('Please select at least one subject you teach.');
+    if (signupRole === 'subject_teacher') {
+      if (signupTeachingClasses.length === 0) {
+        setErrorMsg('Please select at least one Class & Section you teach.');
+        scrollToTop();
+        return;
+      }
+      if (signupSubjects.length === 0) {
+        setErrorMsg('Please select at least one subject you teach.');
+        scrollToTop();
+        return;
+      }
+    }
+
+    if (signupRole === 'class_teacher' && isAlsoSubjectTeacher && signupSubjects.length === 0) {
+      setErrorMsg('Please select at least one subject you teach, or uncheck the Subject Teacher option.');
       scrollToTop();
       return;
     }
@@ -157,16 +190,53 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
         }
       }
 
-      // Build user object
-      const assignedClasses = signupRole === 'class_teacher' ? [signupClass] : undefined;
-      const assignedSubjects =
-        signupRole === 'subject_teacher'
-          ? signupSubjects.map((s) => ({
-              classId: 'c9',
-              sectionId: 'A',
-              subjectName: s,
-            }))
-          : undefined;
+      // Build resolved class tokens and subject mappings
+      const resolveClassToken = (token: string) => {
+        const lastDash = token.lastIndexOf('-');
+        const clsName = lastDash > -1 ? token.slice(0, lastDash).trim() : token;
+        const secId = lastDash > -1 ? token.slice(lastDash + 1).trim().toUpperCase() : 'A';
+        const matchedCls = classes.find((c) => c.name.toLowerCase() === clsName.toLowerCase() || c.id === clsName);
+        return {
+          classId: matchedCls?.id || 'c9',
+          className: matchedCls?.name || clsName,
+          sectionId: secId,
+        };
+      };
+
+      let assignedClasses: string[] | undefined;
+      let assignedSubjects: { classId?: string; sectionId?: string; className?: string; subjectName: string }[] | undefined;
+      let selectedSubjectNames: string[] | undefined;
+
+      if (signupRole === 'class_teacher') {
+        const teachingTokens = isAlsoSubjectTeacher
+          ? Array.from(new Set([signupClass, ...signupTeachingClasses]))
+          : [signupClass];
+        assignedClasses = teachingTokens;
+        if (isAlsoSubjectTeacher && signupSubjects.length > 0) {
+          selectedSubjectNames = signupSubjects;
+          assignedSubjects = teachingTokens.flatMap((token) => {
+            const resolved = resolveClassToken(token);
+            return signupSubjects.map((subj) => ({
+              classId: resolved.classId,
+              sectionId: resolved.sectionId,
+              className: resolved.className,
+              subjectName: subj,
+            }));
+          });
+        }
+      } else if (signupRole === 'subject_teacher') {
+        assignedClasses = signupTeachingClasses;
+        selectedSubjectNames = signupSubjects;
+        assignedSubjects = signupTeachingClasses.flatMap((token) => {
+          const resolved = resolveClassToken(token);
+          return signupSubjects.map((subj) => ({
+            classId: resolved.classId,
+            sectionId: resolved.sectionId,
+            className: resolved.className,
+            subjectName: subj,
+          }));
+        });
+      }
 
       const res = StorageService.registerPendingUser({
         name: cleanName,
@@ -177,8 +247,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
         password: signupPassword,
         isActive: true,
         assignedClasses,
+        inChargeClass: signupRole === 'class_teacher' ? signupClass : undefined,
+        isDualTeacher: signupRole === 'class_teacher' && isAlsoSubjectTeacher && signupSubjects.length > 0,
         assignedSubjects,
-        selectedSubjectNames: signupRole === 'subject_teacher' ? signupSubjects : undefined,
+        selectedSubjectNames,
       });
 
       if (!res.success) {
@@ -451,64 +523,211 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isStandalone = false }) 
                 </select>
               </div>
 
-              {/* Class Teacher: Select assigned class */}
+              {/* Class Teacher: In-Charge Class + Optional Dual Subject Teacher Selection */}
               {signupRole === 'class_teacher' && (
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5">
-                  <label className="block text-slate-700 font-bold text-[11px]">
-                    Assigned Class & Section *
-                  </label>
-                  <select
-                    value={signupClass}
-                    onChange={(e) => setSignupClass(e.target.value)}
-                    className="w-full p-2 rounded-lg border border-slate-300 font-bold text-emerald-800 text-xs bg-white"
-                  >
-                    {classes.flatMap((c) =>
-                      c.sections.map((sec) => (
-                        <option key={`${c.name}-${sec}`} value={`${c.name}-${sec}`}>
-                          {c.name} - Section {sec}
-                        </option>
-                      ))
+                <div className="space-y-3">
+                  <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1.5">
+                    <label className="block text-emerald-950 font-bold text-[11px]">
+                      In-Charge Class & Section (Class Teacher Homeroom) *
+                    </label>
+                    <select
+                      value={signupClass}
+                      onChange={(e) => setSignupClass(e.target.value)}
+                      className="w-full p-2 rounded-lg border border-emerald-300 font-bold text-emerald-900 text-xs bg-white"
+                    >
+                      {classes.flatMap((c) =>
+                        c.sections.map((sec) => (
+                          <option key={`${c.name}-${sec}`} value={`${c.name}-${sec}`}>
+                            {c.name} - Section {sec}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  {/* Dual Role Checkbox: Also Teach Subjects */}
+                  <div className="p-3 bg-blue-50/50 border border-blue-200 rounded-xl space-y-2.5">
+                    <label className="flex items-start gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isAlsoSubjectTeacher}
+                        onChange={(e) => setIsAlsoSubjectTeacher(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                      />
+                      <div>
+                        <span className="font-bold text-blue-950 text-[11px] block">
+                          I also teach Subject(s) (Subject Teacher Assignment)
+                        </span>
+                        <span className="text-[10px] text-blue-800 block">
+                          Required to enter Examination Marks for your taught subjects & classes.
+                        </span>
+                      </div>
+                    </label>
+
+                    {isAlsoSubjectTeacher && (
+                      <div className="space-y-2.5 pt-1 border-t border-blue-200/70">
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-bold text-blue-950 flex items-center gap-1">
+                              <BookOpen className="w-3.5 h-3.5 text-blue-700" />
+                              <span>Select Subjects You Teach *</span>
+                            </span>
+                            <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                              {signupSubjects.length} Selected
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-32 overflow-y-auto p-1 bg-white rounded-lg border border-blue-200">
+                            {allSubjects.map((sub) => {
+                              const isSelected = signupSubjects.includes(sub.name);
+                              return (
+                                <button
+                                  key={sub.id}
+                                  type="button"
+                                  onClick={() => toggleSubject(sub.name)}
+                                  className={`flex items-center justify-between p-1.5 rounded text-left text-[11px] font-semibold transition-all border ${
+                                    isSelected
+                                      ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
+                                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <span className="truncate">{sub.name}</span>
+                                  {isSelected && <Check className="w-3 h-3 shrink-0 ml-1" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[11px] font-bold text-blue-950 flex items-center gap-1">
+                              <Users className="w-3.5 h-3.5 text-blue-700" />
+                              <span>Classes You Teach (In-Charge Class Included Automatically)</span>
+                            </span>
+                          </div>
+                          <div className="max-h-32 overflow-y-auto p-1.5 bg-white rounded-lg border border-blue-200 space-y-1.5">
+                            {classes.map((cls) => (
+                              <div key={cls.id} className="flex flex-wrap items-center gap-1 pb-1 border-b border-slate-100 last:border-b-0">
+                                <button
+                                  type="button"
+                                  onClick={() => toggleAllSectionsOfClass(cls.name, cls.sections)}
+                                  className="text-[10px] font-extrabold text-slate-700 bg-slate-100 hover:bg-slate-200 px-1.5 py-0.5 rounded min-w-[74px] text-left"
+                                >
+                                  {cls.name}
+                                </button>
+                                {cls.sections.map((sec) => {
+                                  const token = `${cls.name}-${sec}`;
+                                  const isHomeroom = token === signupClass;
+                                  const isSelected = isHomeroom || signupTeachingClasses.includes(token);
+                                  return (
+                                    <button
+                                      key={token}
+                                      type="button"
+                                      onClick={() => !isHomeroom && toggleTeachingClass(token)}
+                                      className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
+                                        isHomeroom
+                                          ? 'bg-emerald-600 text-white border-emerald-700'
+                                          : isSelected
+                                          ? 'bg-blue-600 text-white border-blue-700'
+                                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                      }`}
+                                    >
+                                      {sec}{isHomeroom ? ' ★' : ''}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </select>
+                  </div>
                 </div>
               )}
 
-              {/* Subject Teacher: MULTIPLE SUBJECTS SELECTION */}
+              {/* Subject Teacher: MULTIPLE CLASSES & MULTIPLE SUBJECTS SELECTION */}
               {signupRole === 'subject_teacher' && (
-                <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-blue-950 font-bold text-[11px] flex items-center gap-1">
-                      <BookOpen className="w-3.5 h-3.5 text-blue-700" />
-                      <span>Select All Subjects You Teach (Multiple Allowed) *</span>
-                    </label>
-                    <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
-                      {signupSubjects.length} Selected
-                    </span>
+                <div className="space-y-3">
+                  {/* Multiple Classes & Sections */}
+                  <div className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-emerald-950 font-bold text-[11px] flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5 text-emerald-700" />
+                        <span>Select All Classes & Sections You Teach (Multiple Allowed) *</span>
+                      </label>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        {signupTeachingClasses.length} Selected
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-emerald-800">
+                      Click class name to toggle all sections, or pick specific sections:
+                    </p>
+                    <div className="max-h-36 overflow-y-auto p-1.5 bg-white rounded-lg border border-emerald-200 space-y-1.5">
+                      {classes.map((cls) => (
+                        <div key={cls.id} className="flex flex-wrap items-center gap-1 pb-1 border-b border-slate-100 last:border-b-0">
+                          <button
+                            type="button"
+                            onClick={() => toggleAllSectionsOfClass(cls.name, cls.sections)}
+                            className="text-[10px] font-extrabold text-slate-800 bg-slate-100 hover:bg-emerald-100 px-2 py-0.5 rounded min-w-[78px] text-left"
+                          >
+                            {cls.name}
+                          </button>
+                          {cls.sections.map((sec) => {
+                            const token = `${cls.name}-${sec}`;
+                            const isSelected = signupTeachingClasses.includes(token);
+                            return (
+                              <button
+                                key={token}
+                                type="button"
+                                onClick={() => toggleTeachingClass(token)}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
+                                  isSelected
+                                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                }`}
+                              >
+                                Sec {sec}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <p className="text-[10px] text-blue-800">
-                    Select the subjects you are assigned to teach (multiple selections allowed):
-                  </p>
+                  {/* Multiple Subjects */}
+                  <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-blue-950 font-bold text-[11px] flex items-center gap-1">
+                        <BookOpen className="w-3.5 h-3.5 text-blue-700" />
+                        <span>Select All Subjects You Teach (Multiple Allowed) *</span>
+                      </label>
+                      <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                        {signupSubjects.length} Selected
+                      </span>
+                    </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-white rounded-lg border border-blue-200">
-                    {allSubjects.map((sub) => {
-                      const isSelected = signupSubjects.includes(sub.name);
-                      return (
-                        <button
-                          key={sub.id}
-                          type="button"
-                          onClick={() => toggleSubject(sub.name)}
-                          className={`flex items-center justify-between p-1.5 rounded text-left text-[11px] font-semibold transition-all border ${
-                            isSelected
-                              ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
-                              : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >
-                          <span className="truncate">{sub.name}</span>
-                          {isSelected && <Check className="w-3 h-3 shrink-0 ml-1" />}
-                        </button>
-                      );
-                    })}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-white rounded-lg border border-blue-200">
+                      {allSubjects.map((sub) => {
+                        const isSelected = signupSubjects.includes(sub.name);
+                        return (
+                          <button
+                            key={sub.id}
+                            type="button"
+                            onClick={() => toggleSubject(sub.name)}
+                            className={`flex items-center justify-between p-1.5 rounded text-left text-[11px] font-semibold transition-all border ${
+                              isSelected
+                                ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span className="truncate">{sub.name}</span>
+                            {isSelected && <Check className="w-3 h-3 shrink-0 ml-1" />}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               )}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -22,9 +22,14 @@ import {
 export const DisciplineManager: React.FC<{ onSelectStudent: (id: string) => void }> = ({
   onSelectStudent,
 }) => {
-  const { currentUser, canSubmitComplaint } = useAuth();
-  const allStudents = StorageService.getStudents();
+  const { currentUser, currentRole, canSubmitComplaint } = useAuth();
+  const [allStudents, setAllStudents] = useState<Student[]>(() => StorageService.getStudents());
   const [complaints, setComplaints] = useState<StudentComplaint[]>(() => StorageService.getComplaints());
+
+  useEffect(() => {
+    setAllStudents(StorageService.getStudents());
+    setComplaints(StorageService.getComplaints());
+  }, []);
 
   // Filters & State
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
@@ -273,12 +278,14 @@ export const DisciplineManager: React.FC<{ onSelectStudent: (id: string) => void
                     <span className="text-slate-500 font-mono text-[11px]">
                       Parent: {rc.student.parentContact}
                     </span>
-                    <button
-                      onClick={() => onSelectStudent(rc.student.id)}
-                      className="px-3 py-1 bg-rose-600 text-white font-bold rounded-lg text-xs hover:bg-rose-700"
-                    >
-                      Discipline File →
-                    </button>
+                    {currentRole !== 'subject_teacher' && (
+                      <button
+                        onClick={() => onSelectStudent(rc.student.id)}
+                        className="px-3 py-1 bg-rose-600 text-white font-bold rounded-lg text-xs hover:bg-rose-700"
+                      >
+                        Discipline File →
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -304,7 +311,9 @@ export const DisciplineManager: React.FC<{ onSelectStudent: (id: string) => void
                 <th className="py-2.5 px-3">Description</th>
                 <th className="py-2.5 px-3">Reported By</th>
                 <th className="py-2.5 px-3">Status</th>
-                <th className="py-2.5 px-4 text-right">Actions</th>
+                {currentRole !== 'subject_teacher' && (
+                  <th className="py-2.5 px-4 text-right">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -312,7 +321,12 @@ export const DisciplineManager: React.FC<{ onSelectStudent: (id: string) => void
                 <tr key={c.id} className="hover:bg-slate-50">
                   <td className="py-2.5 px-3 font-mono text-slate-600 whitespace-nowrap">{c.date}</td>
                   <td className="py-2.5 px-3 font-bold text-slate-900">
-                    <span className="cursor-pointer hover:underline" onClick={() => onSelectStudent(c.studentId)}>
+                    <span
+                      className={currentRole !== 'subject_teacher' ? 'cursor-pointer hover:underline' : ''}
+                      onClick={() => {
+                        if (currentRole !== 'subject_teacher') onSelectStudent(c.studentId);
+                      }}
+                    >
                       {c.studentName}
                     </span>
                     <span className="text-slate-400 font-normal block text-[11px]">
@@ -323,25 +337,33 @@ export const DisciplineManager: React.FC<{ onSelectStudent: (id: string) => void
                   <td className="py-2.5 px-3 text-slate-700 max-w-sm">{c.description}</td>
                   <td className="py-2.5 px-3 text-slate-600">{c.reportingTeacherName}</td>
                   <td className="py-2.5 px-3">
-                    <select
-                      value={c.status}
-                      onChange={(e) => handleUpdateStatus(c.id, e.target.value as ComplaintStatus)}
-                      className="p-1 px-2 border border-slate-200 rounded text-xs font-semibold bg-white"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Under Review">Under Review</option>
-                      <option value="Parent Contacted">Parent Contacted</option>
-                      <option value="Resolved">Resolved</option>
-                    </select>
+                    {currentRole === 'subject_teacher' ? (
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-semibold text-[11px]">
+                        {c.status}
+                      </span>
+                    ) : (
+                      <select
+                        value={c.status}
+                        onChange={(e) => handleUpdateStatus(c.id, e.target.value as ComplaintStatus)}
+                        className="p-1 px-2 border border-slate-200 rounded text-xs font-semibold bg-white"
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Under Review">Under Review</option>
+                        <option value="Parent Contacted">Parent Contacted</option>
+                        <option value="Resolved">Resolved</option>
+                      </select>
+                    )}
                   </td>
-                  <td className="py-2.5 px-4 text-right">
-                    <button
-                      onClick={() => onSelectStudent(c.studentId)}
-                      className="text-xs font-bold text-emerald-700 hover:text-emerald-900"
-                    >
-                      Student File →
-                    </button>
-                  </td>
+                  {currentRole !== 'subject_teacher' && (
+                    <td className="py-2.5 px-4 text-right">
+                      <button
+                        onClick={() => onSelectStudent(c.studentId)}
+                        className="text-xs font-bold text-emerald-700 hover:text-emerald-900"
+                      >
+                        Student File →
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

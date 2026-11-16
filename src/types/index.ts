@@ -12,8 +12,10 @@ export interface User {
   isApproved?: boolean; // true if approved by Admin, false if pending signup request
   registrationDate?: string;
   assignedClasses?: string[]; // e.g., ["Class IX-A", "Class X-B"]
-  assignedSubjects?: { classId?: string; sectionId?: string; subjectName: string }[];
-  selectedSubjectNames?: string[]; // Multiple subjects taught by subject teacher
+  inChargeClass?: string; // Primary homeroom class-section for Class Teacher e.g. "Class IX-A"
+  isDualTeacher?: boolean; // True if Class Teacher is also assigned Subject Teacher duties
+  assignedSubjects?: { classId?: string; sectionId?: string; className?: string; subjectName: string }[];
+  selectedSubjectNames?: string[]; // Multiple subjects taught by subject/dual teacher
   avatarUrl?: string;
 }
 
@@ -170,10 +172,13 @@ export interface Examination {
   id: string;
   academicYear: string;
   classId: string;
-  sectionId: string;
+  sectionId: string; // 'ALL' applies to all sections of the class, or specific section ID
   name: string;
   category: ExaminationCategory;
   date: string;
+  passingPercentage?: number; // Minimum % required to pass (set by Admin/Principal)
+  totalExamMarks?: number; // Sum of all configured subject total marks
+  createdBy?: string;
   subjects: {
     subjectName: string;
     totalMarks: number;

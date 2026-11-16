@@ -483,15 +483,28 @@ export class StorageService {
 
   static addMonitoring(record: Omit<DailySubjectMonitoring, 'id' | 'createdAt'>): DailySubjectMonitoring {
     const current = this.getMonitoring();
-    const newRec: DailySubjectMonitoring = {
+    const existingIdx = current.findIndex(
+      (m) =>
+        m.studentId === record.studentId &&
+        m.date === record.date &&
+        m.subjectName === record.subjectName
+    );
+
+    const savedRec: DailySubjectMonitoring = {
       ...record,
-      id: 'mon-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-      createdAt: new Date().toISOString(),
+      id: existingIdx !== -1 ? current[existingIdx].id : 'mon-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      createdAt: existingIdx !== -1 ? current[existingIdx].createdAt : new Date().toISOString(),
     };
-    current.push(newRec);
+
+    if (existingIdx !== -1) {
+      current[existingIdx] = savedRec;
+    } else {
+      current.push(savedRec);
+    }
+
     this.saveMonitoring(current);
-    syncDailyMonitoringToSupabase([newRec]).catch(() => {});
-    return newRec;
+    syncDailyMonitoringToSupabase([savedRec]).catch(() => {});
+    return savedRec;
   }
 
   // Complaints
@@ -531,12 +544,7 @@ export class StorageService {
 
   // Examinations & Marks
   static getExaminations(): Examination[] {
-    const list = loadItem<Examination[]>(STORAGE_KEYS.EXAMINATIONS, INITIAL_EXAMINATIONS);
-    if (!list || list.length === 0) {
-      this.saveExaminations(INITIAL_EXAMINATIONS);
-      return INITIAL_EXAMINATIONS;
-    }
-    return list;
+    return loadItem<Examination[]>(STORAGE_KEYS.EXAMINATIONS, INITIAL_EXAMINATIONS);
   }
 
   static saveExaminations(exams: Examination[]): void {
@@ -545,14 +553,43 @@ export class StorageService {
 
   static addExamination(exam: Omit<Examination, 'id' | 'createdAt'>): Examination {
     const exams = this.getExaminations();
+    const totalExamMarks =
+      exam.totalExamMarks ?? exam.subjects.reduce((sum, s) => sum + (Number(s.totalMarks) || 0), 0);
     const newExam: Examination = {
       ...exam,
+      totalExamMarks,
       id: 'exam-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
       createdAt: new Date().toISOString(),
     };
     exams.push(newExam);
     this.saveExaminations(exams);
     return newExam;
+  }
+
+  static updateExamination(id: string, updates: Partial<Examination>): Examination | null {
+    const exams = this.getExaminations();
+    const idx = exams.findIndex((e) => e.id === id);
+    if (idx === -1) return null;
+    const mergedSubjects = updates.subjects ?? exams[idx].subjects;
+    const totalExamMarks =
+      updates.totalExamMarks ?? mergedSubjects.reduce((sum, s) => sum + (Number(s.totalMarks) || 0), 0);
+    exams[idx] = {
+      ...exams[idx],
+      ...updates,
+      totalExamMarks,
+    };
+    this.saveExaminations(exams);
+    return exams[idx];
+  }
+
+  static deleteExamination(id: string): boolean {
+    const exams = this.getExaminations();
+    const filtered = exams.filter((e) => e.id !== id);
+    if (filtered.length !== exams.length) {
+      this.saveExaminations(filtered);
+      return true;
+    }
+    return false;
   }
 
   static getMarks(): StudentMarkRecord[] {
@@ -610,13 +647,20 @@ export class StorageService {
 
   static saveHealthRecord(record: Omit<HealthAndHygieneRecord, 'id'>): HealthAndHygieneRecord {
     const current = this.getHealthRecords();
-    const newRec: HealthAndHygieneRecord = {
+    const existingIdx = current.findIndex(
+      (h) => h.studentId === record.studentId && h.date === record.date
+    );
+    const savedRec: HealthAndHygieneRecord = {
       ...record,
-      id: 'hlth-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      id: existingIdx !== -1 ? current[existingIdx].id : 'hlth-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
     };
-    current.push(newRec);
+    if (existingIdx !== -1) {
+      current[existingIdx] = savedRec;
+    } else {
+      current.push(savedRec);
+    }
     saveItem(STORAGE_KEYS.HEALTH, current);
-    return newRec;
+    return savedRec;
   }
 
   // Uniform
@@ -626,13 +670,20 @@ export class StorageService {
 
   static saveUniformRecord(record: Omit<UniformRecord, 'id'>): UniformRecord {
     const current = this.getUniformRecords();
-    const newRec: UniformRecord = {
+    const existingIdx = current.findIndex(
+      (u) => u.studentId === record.studentId && u.date === record.date
+    );
+    const savedRec: UniformRecord = {
       ...record,
-      id: 'uni-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
+      id: existingIdx !== -1 ? current[existingIdx].id : 'uni-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
     };
-    current.push(newRec);
+    if (existingIdx !== -1) {
+      current[existingIdx] = savedRec;
+    } else {
+      current.push(savedRec);
+    }
     saveItem(STORAGE_KEYS.UNIFORM, current);
-    return newRec;
+    return savedRec;
   }
 
   // Teacher Observations
@@ -736,10 +787,13 @@ export class StorageService {
     students.forEach((student) => {
       const studentAlerts: StudentAlert[] = [];
 
-      // 1. ACADEMIC LOW MARKS (<60%) ALERT (RED ALERT)
+      // 1. ACADEMIC LOW MARKS ALERT (RED ALERT)
+      const examsList = this.getExaminations();
       const studentMarks = marks.filter((m) => m.studentId === student.id);
       studentMarks.forEach((m) => {
-        if (m.obtainedMarks !== null && m.percentage !== null && m.percentage < lowMarksThresh) {
+        const examDef = examsList.find((ex) => ex.id === m.examinationId);
+        const effectiveThresh = examDef?.passingPercentage ?? lowMarksThresh;
+        if (m.obtainedMarks !== null && m.percentage !== null && m.percentage < effectiveThresh) {
           const relatedMeeting = parentMeetings.find((pm) => pm.studentId === student.id);
           studentAlerts.push({
             id: `alert-marks-${m.id}`,
@@ -752,7 +806,7 @@ export class StorageService {
             severity: 'RED',
             category: 'Low Marks (<60%)',
             title: `Low Marks in ${m.subjectName} (${m.percentage}%)`,
-            description: `Obtained ${m.obtainedMarks}/${m.totalMarks} (${m.percentage}%) in ${m.subjectName}. Below school threshold of ${lowMarksThresh}%. Immediate academic support recommended.`,
+            description: `Obtained ${m.obtainedMarks}/${m.totalMarks} (${m.percentage}%) in ${m.subjectName}. Below passing threshold of ${effectiveThresh}%. Immediate academic support recommended.`,
             triggerDate: m.date,
             relatedSubject: m.subjectName,
             status: relatedMeeting ? 'Meeting Scheduled' : 'Active',

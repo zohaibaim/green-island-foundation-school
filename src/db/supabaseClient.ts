@@ -174,21 +174,29 @@ export async function fetchAllProfilesFromSupabase(): Promise<any[]> {
   try {
     const { data, error } = await client.from('profiles').select('*');
     if (error || !data) return [];
-    return data.map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      email: p.email,
-      role: p.role,
-      password: p.password,
-      designation: p.designation || 'Staff',
-      phone: p.phone,
-      isApproved: p.is_approved !== false,
-      isActive: p.is_active !== false,
-      assignedClasses: p.assigned_classes || [],
-      assignedSubjects: p.assigned_subjects || [],
-      selectedSubjectNames: p.selected_subject_names || [],
-      registrationDate: p.created_at,
-    }));
+    return data.map((p: any) => {
+      const assignedClasses: string[] = p.assigned_classes || [];
+      const assignedSubjects = p.assigned_subjects || [];
+      const selectedSubjectNames: string[] = p.selected_subject_names || [];
+      const hasSubjects = selectedSubjectNames.length > 0 || assignedSubjects.length > 0;
+      return {
+        id: p.id,
+        name: p.name,
+        email: p.email,
+        role: p.role,
+        password: p.password,
+        designation: p.designation || 'Staff',
+        phone: p.phone,
+        isApproved: p.is_approved !== false,
+        isActive: p.is_active !== false,
+        assignedClasses,
+        inChargeClass: p.role === 'class_teacher' ? assignedClasses[0] : undefined,
+        isDualTeacher: p.role === 'class_teacher' && hasSubjects,
+        assignedSubjects,
+        selectedSubjectNames,
+        registrationDate: p.created_at,
+      };
+    });
   } catch (e) {
     console.warn('Error fetching profiles from Supabase:', e);
     return [];

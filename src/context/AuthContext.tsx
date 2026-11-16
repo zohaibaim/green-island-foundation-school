@@ -19,11 +19,15 @@ interface AuthContextType {
   closeLoginModal: () => void;
   canEditStudentDetails: (student?: Student) => boolean;
   canManageUsers: () => boolean;
+  canCreateExams: () => boolean;
   canEnterMarksForSubject: (subjectName: string, classId: string, sectionId: string) => boolean;
+  canMonitorSubject: (subjectName: string, classId: string, sectionId: string) => boolean;
   canMarkAttendance: (classId: string, sectionId: string) => boolean;
   canAccessAdminSettings: () => boolean;
   canSubmitComplaint: () => boolean;
   canScheduleParentMeeting: () => boolean;
+  isClassAssignedToUser: (classId: string, sectionId?: string) => boolean;
+  isSubjectAssignedToUser: (subjectName: string) => boolean;
   isReadOnly: () => boolean;
 }
 
@@ -144,6 +148,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           // Verified from cloud Supabase
+          const assignedCls: string[] = data.assigned_classes || [];
+          const assignedSubjs = data.assigned_subjects || [];
+          const selectedSubjNames: string[] = data.selected_subject_names || [];
           const cloudUser: User = {
             id: data.id || `u-${Date.now()}`,
             name: data.name,
@@ -154,9 +161,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             phone: data.phone,
             isActive: data.is_active !== false,
             isApproved: data.is_approved !== false,
-            assignedClasses: data.assigned_classes || [],
-            assignedSubjects: data.assigned_subjects || [],
-            selectedSubjectNames: data.selected_subject_names || [],
+            assignedClasses: assignedCls,
+            inChargeClass: data.role === 'class_teacher' ? assignedCls[0] : undefined,
+            isDualTeacher:
+              data.role === 'class_teacher' && (assignedSubjs.length > 0 || selectedSubjNames.length > 0),
+            assignedSubjects: assignedSubjs,
+            selectedSubjectNames: selectedSubjNames,
             registrationDate: data.created_at,
           };
 
@@ -213,33 +223,118 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAuthenticated = currentUser !== null;
   const isVisitor = !isAuthenticated;
 
-  // Strict Permission Matrix (Admin, Principal, Teacher, Visitor)
+  // Strict Permission Matrix (Admin, Principal, Class Teacher, Subject Teacher, General User)
   const canAccessAdminSettings = () => role === 'admin';
   const canManageUsers = () => role === 'admin';
+  const canCreateExams = () => role === 'admin' || role === 'principal';
+
+  const matchesClassToken = (token: string, classId: string, sectionId?: string): boolean => {
+    const classes = StorageService.getClasses();
+    const targetCls = classes.find((c) => c.id === classId);
+    const cleanToken = token.trim();
+    const lastDash = cleanToken.lastIndexOf('-');
+    const clsPart = lastDash > -1 ? cleanToken.slice(0, lastDash).trim() : cleanToken;
+    const secPart = lastDash > -1 ? cleanToken.slice(lastDash + 1).trim().toUpperCase().replace(/^SECTION\s+/i, '') : 'ALL';
+
+    const classMatches =
+      clsPart.toLowerCase() === classId.toLowerCase() ||
+      (targetCls ? clsPart.toLowerCase() === targetCls.name.toLowerCase() : false);
+    if (!classMatches) return false;
+    if (!sectionId || secPart === 'ALL') return true;
+    return secPart === sectionId.trim().toUpperCase();
+  };
+
+  const isClassAssignedToUser = (classId: string, sectionId?: string): boolean => {
+    if (role === 'admin' || role === 'principal') return true;
+    if (!currentUser) return false;
+    const clsTokens = currentUser.assignedClasses || [];
+    if (currentUser.inChargeClass && !clsTokens.includes(currentUser.inChargeClass)) {
+      clsTokens.push(currentUser.inChargeClass);
+    }
+    if (clsTokens.some((t) => matchesClassToken(t, classId, sectionId))) return true;
+
+    const subjs = currentUser.assignedSubjects || [];
+    return subjs.some((as) => {
+      if (!as.classId && !as.className) return false;
+      const clsMatch =
+        as.classId === 'ALL' ||
+        as.classId === classId ||
+        (as.className ? matchesClassToken(as.className, classId, sectionId) : false);
+      if (!clsMatch) return false;
+      if (!sectionId || !as.sectionId || as.sectionId === 'ALL') return true;
+      return as.sectionId.toUpperCase() === sectionId.toUpperCase();
+    });
+  };
+
+  const isSubjectAssignedToUser = (subjectName: string): boolean => {
+    if (role === 'admin' || role === 'principal') return true;
+    if (!currentUser) return false;
+    const target = subjectName.trim().toLowerCase();
+    const selectedNames = currentUser.selectedSubjectNames || [];
+    if (selectedNames.some((s) => s.trim().toLowerCase() === target)) return true;
+    const assignedSubjs = currentUser.assignedSubjects || [];
+    return assignedSubjs.some((as) => as.subjectName.trim().toLowerCase() === target);
+  };
 
   const canEditStudentDetails = (student?: Student) => {
-    if (role === 'admin') return true;
+    if (role === 'admin' || role === 'principal') return true;
     if (role === 'class_teacher' && currentUser) {
       if (!student) return true;
-      return currentUser.assignedClasses?.includes(`${student.className}-${student.sectionName.replace('Section ', '')}`) ?? true;
+      return isClassAssignedToUser(student.classId, student.sectionId);
     }
     return false;
   };
 
   const canMarkAttendance = (classId: string, sectionId: string) => {
     if (role === 'admin' || role === 'principal') return true;
-    if (role === 'class_teacher') return true;
+    if (role === 'class_teacher' && currentUser) {
+      const homeroom = currentUser.inChargeClass || currentUser.assignedClasses?.[0];
+      if (!homeroom && (!currentUser.assignedClasses || currentUser.assignedClasses.length === 0)) return true;
+      return isClassAssignedToUser(classId, sectionId);
+    }
     return false;
   };
 
   const canEnterMarksForSubject = (subjectName: string, classId: string, sectionId: string) => {
-    if (role === 'admin') return true;
-    if (role === 'class_teacher') return true;
-    if (role === 'subject_teacher' && currentUser) {
-      if (!currentUser.assignedSubjects || currentUser.assignedSubjects.length === 0) return true;
-      return currentUser.assignedSubjects.some(
-        (as) => as.subjectName.toLowerCase().includes(subjectName.toLowerCase()) || subjectName.toLowerCase().includes(as.subjectName.toLowerCase())
-      );
+    if (role === 'admin' || role === 'principal') return true;
+    if ((role === 'subject_teacher' || role === 'class_teacher') && currentUser) {
+      const targetSubj = subjectName.trim().toLowerCase();
+      const assignedSubjs = currentUser.assignedSubjects || [];
+      const selectedSubjNames = currentUser.selectedSubjectNames || [];
+      const assignedCls = currentUser.assignedClasses || [];
+
+      // Check explicit (class, section, subject) bindings first
+      const hasExplicitMatch = assignedSubjs.some((as) => {
+        const subjMatch = as.subjectName.trim().toLowerCase() === targetSubj;
+        if (!subjMatch) return false;
+        const clsMatch =
+          !as.classId || as.classId === 'ALL'
+            ? assignedCls.some((t) => matchesClassToken(t, classId, sectionId))
+            : as.classId === classId && (!as.sectionId || as.sectionId === 'ALL' || as.sectionId.toUpperCase() === sectionId.toUpperCase());
+        return clsMatch;
+      });
+      if (hasExplicitMatch) return true;
+
+      // Also check selectedSubjectNames paired with assignedClasses
+      if (selectedSubjNames.some((s) => s.trim().toLowerCase() === targetSubj)) {
+        if (assignedCls.some((t) => matchesClassToken(t, classId, sectionId))) return true;
+      }
+
+      return false;
+    }
+    return false;
+  };
+
+  const canMonitorSubject = (subjectName: string, classId: string, sectionId: string) => {
+    if (role === 'admin' || role === 'principal') return true;
+    if (role === 'class_teacher') {
+      // Class teacher can monitor their assigned class across subjects, plus any extra assigned subjects/classes
+      const homeroom = currentUser?.inChargeClass || currentUser?.assignedClasses?.[0];
+      if (homeroom && matchesClassToken(homeroom, classId, sectionId)) return true;
+      return canEnterMarksForSubject(subjectName, classId, sectionId);
+    }
+    if (role === 'subject_teacher') {
+      return canEnterMarksForSubject(subjectName, classId, sectionId);
     }
     return false;
   };
@@ -272,11 +367,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeLoginModal,
         canEditStudentDetails,
         canManageUsers,
+        canCreateExams,
         canEnterMarksForSubject,
+        canMonitorSubject,
         canMarkAttendance,
         canAccessAdminSettings,
         canSubmitComplaint,
         canScheduleParentMeeting,
+        isClassAssignedToUser,
+        isSubjectAssignedToUser,
         isReadOnly,
       }}
     >

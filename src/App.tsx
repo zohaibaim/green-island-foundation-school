@@ -20,7 +20,7 @@ import { ClassesAndTeachersManager } from './components/admin/ClassesAndTeachers
 import { SystemSettingsAndSQL } from './components/admin/SystemSettingsAndSQL';
 import { LoginModal } from './components/auth/LoginModal';
 
-import { LayoutDashboard, AlertTriangle, Users, CalendarCheck, Menu, Lock } from 'lucide-react';
+import { LayoutDashboard, AlertTriangle, Users, CalendarCheck, Menu, Lock, GraduationCap, BookOpen, ShieldAlert } from 'lucide-react';
 
 function AppContent() {
   const { isAuthenticated, currentUser, currentRole, targetTabAfterLogin } = useAuth();
@@ -48,7 +48,26 @@ function AppContent() {
     return <LoginModal isStandalone />;
   }
 
+  const isTabAllowedForRole = (tab: string): boolean => {
+    if (currentRole === 'admin') return true;
+    if (currentRole === 'principal') return tab !== 'system_settings';
+    if (currentRole === 'class_teacher') {
+      return !['system_settings', 'classes_teachers', 'excel_import'].includes(tab);
+    }
+    if (currentRole === 'subject_teacher') {
+      return ['dashboard', 'academics', 'monitoring', 'complaints'].includes(tab);
+    }
+    return tab === 'dashboard';
+  };
+
+  useEffect(() => {
+    if (!isTabAllowedForRole(activeTab)) {
+      setActiveTab('dashboard');
+    }
+  }, [currentRole, activeTab]);
+
   const handleSelectStudent = (id: string) => {
+    if (currentRole === 'subject_teacher') return;
     setSelectedStudentId(id);
     setActiveTab('portfolio');
     setIsMobileMenuOpen(false);
@@ -59,6 +78,7 @@ function AppContent() {
   };
 
   const handleTabChange = (tab: string) => {
+    if (!isTabAllowedForRole(tab)) return;
     setActiveTab(tab);
     setIsMobileMenuOpen(false);
   };
@@ -185,7 +205,7 @@ function AppContent() {
         </main>
       </div>
 
-      {/* Mobile Bottom Quick Navigation Bar (Sticky thumb-friendly access for phones) */}
+      {/* Mobile Bottom Quick Navigation Bar (Role-aware thumb-friendly access for phones) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1.5 flex items-center justify-around shadow-lg select-none">
         <button
           onClick={() => handleTabChange('dashboard')}
@@ -197,42 +217,78 @@ function AppContent() {
           <span>Home</span>
         </button>
 
-        <button
-          onClick={() => handleTabChange('alerts')}
-          className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
-            activeTab === 'alerts' ? 'text-rose-700 font-bold' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <div className="relative">
-            <AlertTriangle className={`w-5 h-5 mb-0.5 ${activeTab === 'alerts' ? 'text-rose-700 stroke-[2.5]' : ''}`} />
-            {activeAlertsCount > 0 && (
-              <span className="absolute -top-1 -right-2 bg-rose-600 text-white text-[9px] font-bold px-1 rounded-full animate-pulse min-w-[14px] text-center">
-                {activeAlertsCount}
-              </span>
-            )}
-          </div>
-          <span>Alerts</span>
-        </button>
+        {currentRole === 'subject_teacher' ? (
+          <>
+            <button
+              onClick={() => handleTabChange('academics')}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
+                activeTab === 'academics' ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <GraduationCap className={`w-5 h-5 mb-0.5 ${activeTab === 'academics' ? 'text-emerald-700 stroke-[2.5]' : ''}`} />
+              <span>Marks</span>
+            </button>
 
-        <button
-          onClick={() => handleTabChange('students')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
-            activeTab === 'students' || activeTab === 'portfolio' ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <Users className={`w-5 h-5 mb-0.5 ${activeTab === 'students' || activeTab === 'portfolio' ? 'text-emerald-700 stroke-[2.5]' : ''}`} />
-          <span>Students</span>
-        </button>
+            <button
+              onClick={() => handleTabChange('monitoring')}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
+                activeTab === 'monitoring' ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <BookOpen className={`w-5 h-5 mb-0.5 ${activeTab === 'monitoring' ? 'text-emerald-700 stroke-[2.5]' : ''}`} />
+              <span>Books/HW</span>
+            </button>
 
-        <button
-          onClick={() => handleTabChange('attendance')}
-          className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
-            activeTab === 'attendance' ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-900'
-          }`}
-        >
-          <CalendarCheck className={`w-5 h-5 mb-0.5 ${activeTab === 'attendance' ? 'text-emerald-700 stroke-[2.5]' : ''}`} />
-          <span>Attendance</span>
-        </button>
+            <button
+              onClick={() => handleTabChange('complaints')}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
+                activeTab === 'complaints' ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <ShieldAlert className={`w-5 h-5 mb-0.5 ${activeTab === 'complaints' ? 'text-emerald-700 stroke-[2.5]' : ''}`} />
+              <span>Complaints</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => handleTabChange('alerts')}
+              className={`relative flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
+                activeTab === 'alerts' ? 'text-rose-700 font-bold' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <div className="relative">
+                <AlertTriangle className={`w-5 h-5 mb-0.5 ${activeTab === 'alerts' ? 'text-rose-700 stroke-[2.5]' : ''}`} />
+                {activeAlertsCount > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-rose-600 text-white text-[9px] font-bold px-1 rounded-full animate-pulse min-w-[14px] text-center">
+                    {activeAlertsCount}
+                  </span>
+                )}
+              </div>
+              <span>Alerts</span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange('students')}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
+                activeTab === 'students' || activeTab === 'portfolio' ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <Users className={`w-5 h-5 mb-0.5 ${activeTab === 'students' || activeTab === 'portfolio' ? 'text-emerald-700 stroke-[2.5]' : ''}`} />
+              <span>Students</span>
+            </button>
+
+            <button
+              onClick={() => handleTabChange('attendance')}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-lg text-[10px] font-medium transition-colors ${
+                activeTab === 'attendance' ? 'text-emerald-700 font-bold' : 'text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <CalendarCheck className={`w-5 h-5 mb-0.5 ${activeTab === 'attendance' ? 'text-emerald-700 stroke-[2.5]' : ''}`} />
+              <span>Attendance</span>
+            </button>
+          </>
+        )}
 
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

@@ -1270,9 +1270,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Seed Primary Administrator Account
+-- Seed Primary Administrator Account (UUID & TEXT compatible)
 INSERT INTO public.profiles (id, name, email, role, password, designation, is_approved, is_active)
-VALUES ('u-admin', 'Zohaib (Administrator)', 'zohaib.aim@gmail.com', 'admin', 'Malik@456', 'Super Administrator & School Head', TRUE, TRUE)
+VALUES ('00000000-0000-4000-8000-000000000001', 'Zohaib (Administrator)', 'zohaib.aim@gmail.com', 'admin', 'Malik@456', 'Super Administrator & School Head', TRUE, TRUE)
 ON CONFLICT (email) DO UPDATE SET password = 'Malik@456', is_approved = TRUE, is_active = TRUE;
 
 -- 4. CLASSES & SECTIONS
@@ -1566,7 +1566,8 @@ BEGIN
 END $$;
 
 -- 16. AUTOMATIC LOW MARKS ALERT VIEW
-CREATE OR REPLACE VIEW public.students_requiring_attention AS
+DROP VIEW IF EXISTS public.students_requiring_attention;
+CREATE VIEW public.students_requiring_attention AS
 SELECT
   s.id AS student_id,
   s.name,

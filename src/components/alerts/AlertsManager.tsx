@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSyncTick } from '../../hooks/useCloudSync';
 import { StudentAlert, AlertSeverity, Student, ParentMeeting } from '../../types';
 import {
   AlertTriangle,
@@ -39,11 +40,13 @@ export const AlertsManager: React.FC<AlertsManagerProps> = ({ onSelectStudent })
     followUpDate: '',
   });
 
+  const syncTick = useCloudSyncTick();
+
   const studentsRequiringContact = useMemo(() => {
     const list = StorageService.getStudentsRequiringParentContact();
     if (severityFilter === 'ALL') return list;
     return list.filter((i) => i.highestSeverity === severityFilter);
-  }, [severityFilter]);
+  }, [severityFilter, syncTick]);
 
   const allAlertsCount = useMemo(() => {
     const alertsMap = StorageService.computeAllStudentAlerts();
@@ -52,7 +55,7 @@ export const AlertsManager: React.FC<AlertsManagerProps> = ({ onSelectStudent })
       count += alerts.length;
     });
     return count;
-  }, []);
+  }, [syncTick]);
 
   const handleOpenMeetingModal = (student: Student, alert: StudentAlert) => {
     setSelectedItemForMeeting({ student, alert });

@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
-import { TeacherObservation, DailyActivity } from '../../types';
+import { useCloudSync } from '../../hooks/useCloudSync';
+import { TeacherObservation, DailyActivity, Student } from '../../types';
 import { Award, Plus, Calendar, User, Sparkles } from 'lucide-react';
 
 export const ObservationsManager: React.FC<{ onSelectStudent: (id: string) => void }> = ({
   onSelectStudent,
 }) => {
   const { currentUser } = useAuth();
-  const students = StorageService.getStudents();
+  const [students, setStudents] = useState<Student[]>(() => StorageService.getStudents());
   const [observations, setObservations] = useState<TeacherObservation[]>(() =>
     StorageService.getObservations()
   );
+
+  useCloudSync(() => {
+    setStudents(StorageService.getStudents());
+    setObservations(StorageService.getObservations());
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newObs, setNewObs] = useState({

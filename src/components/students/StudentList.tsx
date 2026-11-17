@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSync } from '../../hooks/useCloudSync';
 import { Student, AlertSeverity } from '../../types';
 import {
   Users,
@@ -27,6 +28,10 @@ export const StudentList: React.FC<StudentListProps> = ({ onSelectStudent }) => 
   const { canEditStudentDetails, canManageUsers } = useAuth();
   const [students, setStudents] = useState<Student[]>(() => StorageService.getStudents());
   const classes = StorageService.getClasses();
+
+  useCloudSync(() => {
+    setStudents(StorageService.getStudents());
+  });
 
   // Quick Navigation State (Section 7: Select Class → Select Section → Enter Roll Number → Open)
   const [quickClassId, setQuickClassId] = useState<string>('c9');

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSync } from '../../hooks/useCloudSync';
 import { AttendanceRecord, AttendanceStatus, Student } from '../../types';
 import {
   CalendarCheck,
@@ -22,10 +23,19 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
   const { canMarkAttendance, currentUser } = useAuth();
   const classes = StorageService.getClasses();
   const [allStudents, setAllStudents] = useState<Student[]>(() => StorageService.getStudents());
+  const [cloudAttTick, setCloudAttTick] = useState(0);
+  const isDirtyRef = React.useRef(false);
 
   React.useEffect(() => {
     setAllStudents(StorageService.getStudents());
   }, []);
+
+  useCloudSync(() => {
+    setAllStudents(StorageService.getStudents());
+    if (!isDirtyRef.current) {
+      setCloudAttTick((t) => t + 1);
+    }
+  });
 
   // Determine initial class and section based on teacher assignment if available
   const initialClassToken = currentUser?.inChargeClass || currentUser?.assignedClasses?.[0] || '';
@@ -124,7 +134,8 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
 
     setAttendanceMap(newMap);
     setIsVerified(allFinalized);
-  }, [selectedClassId, selectedSectionId, selectedDate, targetStudentsKey]);
+    isDirtyRef.current = false;
+  }, [selectedClassId, selectedSectionId, selectedDate, targetStudentsKey, cloudAttTick]);
 
   const defaultAttendanceEntry = {
     status: 'Present' as AttendanceStatus,
@@ -136,6 +147,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
 
   // Update student status via dropdown
   const updateStudentStatus = (studentId: string, status: AttendanceStatus) => {
+    isDirtyRef.current = true;
     setAttendanceMap((prev) => {
       const current = prev[studentId] || defaultAttendanceEntry;
       return {
@@ -151,6 +163,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
 
   // Bulk apply status to all students
   const handleBulkSetStatus = (status: AttendanceStatus) => {
+    isDirtyRef.current = true;
     const updated: Record<string, any> = {};
     targetStudents.forEach((std) => {
       const prevEntry = attendanceMap[std.id] || defaultAttendanceEntry;
@@ -187,6 +200,7 @@ export const AttendanceManager: React.FC<{ onSelectStudent: (id: string) => void
     });
 
     StorageService.markAttendance(recordsToSave);
+    isDirtyRef.current = false;
     setIsVerified(finalize);
     setSaveSuccessMsg(
       finalize

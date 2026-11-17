@@ -26,6 +26,9 @@ import {
   saveSupabaseConfig,
   clearSupabaseConfig,
   testSupabaseConnection,
+  pushAllLocalToSupabase,
+  pullAllFromSupabaseAndSyncUI,
+  clearMissingOptionalTableCache,
 } from '../../db/supabaseClient';
 
 export const SystemSettingsAndSQL: React.FC = () => {
@@ -278,7 +281,7 @@ export const SystemSettingsAndSQL: React.FC = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
               <a
                 href="https://supabase.com"
                 target="_blank"
@@ -288,6 +291,29 @@ export const SystemSettingsAndSQL: React.FC = () => {
                 <span>Open Supabase Dashboard (Free)</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
+
+              {isCloudConnected && (
+                <button
+                  type="button"
+                  disabled={isTestingCloud}
+                  onClick={async () => {
+                    setIsTestingCloud(true);
+                    clearMissingOptionalTableCache();
+                    setCloudStatusMsg({ type: 'idle', message: 'Syncing all local & cloud records...' });
+                    const pushRes = await pushAllLocalToSupabase();
+                    await pullAllFromSupabaseAndSyncUI();
+                    setIsTestingCloud(false);
+                    setCloudStatusMsg({
+                      type: pushRes.success ? 'success' : 'error',
+                      message: pushRes.message,
+                    });
+                  }}
+                  className="px-4 py-2 bg-indigo-700 hover:bg-indigo-800 text-white font-bold rounded-xl text-xs shadow-xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isTestingCloud ? 'animate-spin' : ''}`} />
+                  <span>Sync All Data Now</span>
+                </button>
+              )}
             </div>
 
             <button

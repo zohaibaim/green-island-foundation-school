@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSync } from '../../hooks/useCloudSync';
 import { ClassGrade, Subject, User, UserRole } from '../../types';
 import {
   Layers,
@@ -38,6 +39,12 @@ export const ClassesAndTeachersManager: React.FC = () => {
   const [classes, setClasses] = useState<ClassGrade[]>(() => StorageService.getClasses());
   const [subjects, setSubjects] = useState<Subject[]>(() => StorageService.getSubjects());
   const [users, setUsers] = useState<User[]>(() => StorageService.getUsers());
+
+  useCloudSync(() => {
+    setClasses(StorageService.getClasses());
+    setSubjects(StorageService.getSubjects());
+    setUsers(StorageService.getUsers());
+  });
   const [msg, setMsg] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const [activeTab, setActiveTab] = useState<'classes' | 'subjects' | 'teachers' | 'pending_approvals' | 'master_data'>('classes');

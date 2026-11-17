@@ -1,17 +1,23 @@
 import React, { useState } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
-import { ParentMeeting } from '../../types';
+import { useCloudSync } from '../../hooks/useCloudSync';
+import { ParentMeeting, Student } from '../../types';
 import { MessageSquare, Plus, Calendar, Phone, CheckCircle2, Clock } from 'lucide-react';
 
 export const ParentMeetingsManager: React.FC<{ onSelectStudent: (id: string) => void }> = ({
   onSelectStudent,
 }) => {
   const { currentUser, canScheduleParentMeeting } = useAuth();
-  const students = StorageService.getStudents();
+  const [students, setStudents] = useState<Student[]>(() => StorageService.getStudents());
   const [meetings, setMeetings] = useState<ParentMeeting[]>(() =>
     StorageService.getParentMeetings()
   );
+
+  useCloudSync(() => {
+    setStudents(StorageService.getStudents());
+    setMeetings(StorageService.getParentMeetings());
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState({

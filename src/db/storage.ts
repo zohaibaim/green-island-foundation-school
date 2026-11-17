@@ -21,9 +21,24 @@ import {
 import {
   syncProfileToSupabase,
   deleteProfileFromSupabase,
+  syncClassesToSupabase,
+  deleteClassFromSupabase,
+  syncSubjectsToSupabase,
+  deleteSubjectFromSupabase,
+  syncStudentsToSupabase,
+  deleteStudentFromSupabase,
   syncAttendanceToSupabase,
   syncMarksToSupabase,
   syncDailyMonitoringToSupabase,
+  syncComplaintsToSupabase,
+  syncExaminationsToSupabase,
+  deleteExaminationFromSupabase,
+  syncParentMeetingsToSupabase,
+  syncHealthRecordsToSupabase,
+  syncUniformRecordsToSupabase,
+  syncObservationsToSupabase,
+  syncSettingsToSupabase,
+  pushAllLocalToSupabase,
 } from './supabaseClient';
 
 
@@ -112,6 +127,7 @@ export class StorageService {
 
   static saveSettings(settings: SystemSettings): void {
     saveItem(STORAGE_KEYS.SETTINGS, settings);
+    syncSettingsToSupabase(settings).catch(() => {});
   }
 
   // Classes
@@ -121,6 +137,7 @@ export class StorageService {
 
   static saveClasses(classes: ClassGrade[]): void {
     saveItem(STORAGE_KEYS.CLASSES, classes);
+    syncClassesToSupabase(classes).catch(() => {});
   }
 
   static addClass(cls: Omit<ClassGrade, 'id'>): ClassGrade {
@@ -147,7 +164,8 @@ export class StorageService {
     const classes = this.getClasses();
     const filtered = classes.filter((c) => c.id !== id);
     if (filtered.length !== classes.length) {
-      this.saveClasses(filtered);
+      saveItem(STORAGE_KEYS.CLASSES, filtered);
+      deleteClassFromSupabase(id).catch(() => {});
       return true;
     }
     return false;
@@ -182,6 +200,7 @@ export class StorageService {
 
   static saveSubjects(subjects: Subject[]): void {
     saveItem(STORAGE_KEYS.SUBJECTS, subjects);
+    syncSubjectsToSupabase(subjects).catch(() => {});
   }
 
   static addSubject(subj: Omit<Subject, 'id'>): Subject {
@@ -208,7 +227,8 @@ export class StorageService {
     const subjects = this.getSubjects();
     const filtered = subjects.filter((s) => s.id !== id);
     if (filtered.length !== subjects.length) {
-      this.saveSubjects(filtered);
+      saveItem(STORAGE_KEYS.SUBJECTS, filtered);
+      deleteSubjectFromSupabase(id).catch(() => {});
       return true;
     }
     return false;
@@ -397,6 +417,7 @@ export class StorageService {
 
   static saveStudents(students: Student[]): void {
     saveItem(STORAGE_KEYS.STUDENTS, students);
+    syncStudentsToSupabase(students).catch(() => {});
   }
 
   static addStudent(student: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>): Student {
@@ -408,7 +429,8 @@ export class StorageService {
       updatedAt: new Date().toISOString(),
     };
     students.push(newStudent);
-    this.saveStudents(students);
+    saveItem(STORAGE_KEYS.STUDENTS, students);
+    syncStudentsToSupabase([newStudent]).catch(() => {});
     return newStudent;
   }
 
@@ -421,7 +443,8 @@ export class StorageService {
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    this.saveStudents(students);
+    saveItem(STORAGE_KEYS.STUDENTS, students);
+    syncStudentsToSupabase([students[idx]]).catch(() => {});
     return students[idx];
   }
 
@@ -429,7 +452,8 @@ export class StorageService {
     const students = this.getStudents();
     const filtered = students.filter((s) => s.id !== id);
     if (filtered.length !== students.length) {
-      this.saveStudents(filtered);
+      saveItem(STORAGE_KEYS.STUDENTS, filtered);
+      deleteStudentFromSupabase(id).catch(() => {});
       return true;
     }
     return false;
@@ -514,6 +538,7 @@ export class StorageService {
 
   static saveComplaints(complaints: StudentComplaint[]): void {
     saveItem(STORAGE_KEYS.COMPLAINTS, complaints);
+    syncComplaintsToSupabase(complaints).catch(() => {});
   }
 
   static addComplaint(complaint: Omit<StudentComplaint, 'id' | 'createdAt' | 'updatedAt'>): StudentComplaint {
@@ -525,7 +550,8 @@ export class StorageService {
       updatedAt: new Date().toISOString(),
     };
     current.push(newComplaint);
-    this.saveComplaints(current);
+    saveItem(STORAGE_KEYS.COMPLAINTS, current);
+    syncComplaintsToSupabase([newComplaint]).catch(() => {});
     return newComplaint;
   }
 
@@ -538,7 +564,8 @@ export class StorageService {
       ...updates,
       updatedAt: new Date().toISOString(),
     };
-    this.saveComplaints(current);
+    saveItem(STORAGE_KEYS.COMPLAINTS, current);
+    syncComplaintsToSupabase([current[idx]]).catch(() => {});
     return current[idx];
   }
 
@@ -549,6 +576,7 @@ export class StorageService {
 
   static saveExaminations(exams: Examination[]): void {
     saveItem(STORAGE_KEYS.EXAMINATIONS, exams);
+    syncExaminationsToSupabase(exams).catch(() => {});
   }
 
   static addExamination(exam: Omit<Examination, 'id' | 'createdAt'>): Examination {
@@ -562,7 +590,8 @@ export class StorageService {
       createdAt: new Date().toISOString(),
     };
     exams.push(newExam);
-    this.saveExaminations(exams);
+    saveItem(STORAGE_KEYS.EXAMINATIONS, exams);
+    syncExaminationsToSupabase([newExam]).catch(() => {});
     return newExam;
   }
 
@@ -578,7 +607,8 @@ export class StorageService {
       ...updates,
       totalExamMarks,
     };
-    this.saveExaminations(exams);
+    saveItem(STORAGE_KEYS.EXAMINATIONS, exams);
+    syncExaminationsToSupabase([exams[idx]]).catch(() => {});
     return exams[idx];
   }
 
@@ -586,7 +616,8 @@ export class StorageService {
     const exams = this.getExaminations();
     const filtered = exams.filter((e) => e.id !== id);
     if (filtered.length !== exams.length) {
-      this.saveExaminations(filtered);
+      saveItem(STORAGE_KEYS.EXAMINATIONS, filtered);
+      deleteExaminationFromSupabase(id).catch(() => {});
       return true;
     }
     return false;
@@ -660,6 +691,7 @@ export class StorageService {
       current.push(savedRec);
     }
     saveItem(STORAGE_KEYS.HEALTH, current);
+    syncHealthRecordsToSupabase([savedRec]).catch(() => {});
     return savedRec;
   }
 
@@ -683,6 +715,7 @@ export class StorageService {
       current.push(savedRec);
     }
     saveItem(STORAGE_KEYS.UNIFORM, current);
+    syncUniformRecordsToSupabase([savedRec]).catch(() => {});
     return savedRec;
   }
 
@@ -699,6 +732,7 @@ export class StorageService {
     };
     current.push(newRec);
     saveItem(STORAGE_KEYS.OBSERVATIONS, current);
+    syncObservationsToSupabase([newRec]).catch(() => {});
     return newRec;
   }
 
@@ -725,6 +759,7 @@ export class StorageService {
 
   static saveParentMeetings(meetings: ParentMeeting[]): void {
     saveItem(STORAGE_KEYS.PARENT_MEETINGS, meetings);
+    syncParentMeetingsToSupabase(meetings).catch(() => {});
   }
 
   static addParentMeeting(record: Omit<ParentMeeting, 'id' | 'createdAt'>): ParentMeeting {
@@ -735,7 +770,8 @@ export class StorageService {
       createdAt: new Date().toISOString(),
     };
     current.push(newRec);
-    this.saveParentMeetings(current);
+    saveItem(STORAGE_KEYS.PARENT_MEETINGS, current);
+    syncParentMeetingsToSupabase([newRec]).catch(() => {});
     return newRec;
   }
 
@@ -744,7 +780,8 @@ export class StorageService {
     const idx = current.findIndex((m) => m.id === id);
     if (idx === -1) return null;
     current[idx] = { ...current[idx], ...updates };
-    this.saveParentMeetings(current);
+    saveItem(STORAGE_KEYS.PARENT_MEETINGS, current);
+    syncParentMeetingsToSupabase([current[idx]]).catch(() => {});
     return current[idx];
   }
 
@@ -1164,6 +1201,8 @@ export class StorageService {
       if (data.parentMeetings) saveItem(STORAGE_KEYS.PARENT_MEETINGS, data.parentMeetings);
       if (data.docs) saveItem(STORAGE_KEYS.DOCS, data.docs);
 
+      pushAllLocalToSupabase().catch(() => {});
+
       return {
         success: true,
         message: 'Master database successfully restored!',
@@ -1199,19 +1238,19 @@ export class StorageService {
     return `-- ==============================================================================
 -- GREEN ISLAND FOUNDATION SCHOOL
 -- Student Portfolio, Academic Records & Daily Monitoring Management System
--- Production PostgreSQL Database Schema & Supabase Setup Script
--- Generated for Green Island Foundation School
+-- Idempotent PostgreSQL & Supabase Realtime Setup Script
+-- Safe to run on both brand-new and existing Supabase databases
 -- ==============================================================================
 
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. SYSTEM ROLES ENUM
-CREATE TYPE app_role AS ENUM ('admin', 'principal', 'class_teacher', 'subject_teacher', 'general_user');
-CREATE TYPE student_status_enum AS ENUM ('Active', 'Inactive', 'Transferred', 'Graduated');
-CREATE TYPE attendance_status_enum AS ENUM ('Present', 'Absent', 'Late', 'Leave', 'Half Day');
-CREATE TYPE tristate_enum AS ENUM ('Yes', 'No', 'Not Applicable');
-CREATE TYPE hygiene_status_enum AS ENUM ('Satisfactory', 'Needs Improvement', 'Not Applicable');
+-- 2. SYSTEM ROLES ENUMS (Idempotent)
+DO $$ BEGIN CREATE TYPE app_role AS ENUM ('admin', 'principal', 'class_teacher', 'subject_teacher', 'general_user'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE student_status_enum AS ENUM ('Active', 'Inactive', 'Transferred', 'Graduated'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE attendance_status_enum AS ENUM ('Present', 'Absent', 'Late', 'Leave', 'Half Day'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE tristate_enum AS ENUM ('Yes', 'No', 'Not Applicable'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE hygiene_status_enum AS ENUM ('Satisfactory', 'Needs Improvement', 'Not Applicable'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- 3. PROFILES / USERS TABLE
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -1362,9 +1401,16 @@ CREATE TABLE IF NOT EXISTS public.examinations (
   name TEXT NOT NULL,
   category TEXT NOT NULL,
   date DATE NOT NULL,
+  passing_percentage INT DEFAULT 60,
+  total_exam_marks INT DEFAULT 0,
+  created_by TEXT,
   subjects JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE public.examinations ADD COLUMN IF NOT EXISTS passing_percentage INT DEFAULT 60;
+ALTER TABLE public.examinations ADD COLUMN IF NOT EXISTS total_exam_marks INT DEFAULT 0;
+ALTER TABLE public.examinations ADD COLUMN IF NOT EXISTS created_by TEXT;
 
 -- 11. STUDENT MARKS
 CREATE TABLE IF NOT EXISTS public.student_marks (
@@ -1410,25 +1456,116 @@ CREATE TABLE IF NOT EXISTS public.parent_meetings (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 13. ROW LEVEL SECURITY (RLS) POLICIES
+-- 13. HEALTH & HYGIENE, UNIFORM, OBSERVATIONS & SETTINGS
+CREATE TABLE IF NOT EXISTS public.health_records (
+  id TEXT PRIMARY KEY,
+  student_id TEXT REFERENCES public.students(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  nails_trimmed hygiene_status_enum DEFAULT 'Satisfactory',
+  hair_maintained hygiene_status_enum DEFAULT 'Satisfactory',
+  haircut_standard hygiene_status_enum DEFAULT 'Satisfactory',
+  personal_cleanliness hygiene_status_enum DEFAULT 'Satisfactory',
+  general_hygiene hygiene_status_enum DEFAULT 'Satisfactory',
+  remarks TEXT,
+  teacher_name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.uniform_records (
+  id TEXT PRIMARY KEY,
+  student_id TEXT REFERENCES public.students(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  proper_uniform hygiene_status_enum DEFAULT 'Satisfactory',
+  clean_uniform hygiene_status_enum DEFAULT 'Satisfactory',
+  proper_shoes hygiene_status_enum DEFAULT 'Satisfactory',
+  proper_socks hygiene_status_enum DEFAULT 'Satisfactory',
+  school_belt hygiene_status_enum DEFAULT 'Satisfactory',
+  school_tie hygiene_status_enum DEFAULT 'Satisfactory',
+  school_badge hygiene_status_enum DEFAULT 'Satisfactory',
+  overall_appearance hygiene_status_enum DEFAULT 'Satisfactory',
+  remarks TEXT,
+  teacher_name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.teacher_observations (
+  id TEXT PRIMARY KEY,
+  student_id TEXT REFERENCES public.students(id) ON DELETE CASCADE,
+  student_name TEXT NOT NULL,
+  date DATE NOT NULL,
+  teacher_name TEXT NOT NULL,
+  positive_remarks TEXT DEFAULT '',
+  improvement_suggestions TEXT DEFAULT '',
+  teacher_observations TEXT DEFAULT '',
+  recommended_action TEXT DEFAULT '',
+  category TEXT DEFAULT 'General'
+);
+
+CREATE TABLE IF NOT EXISTS public.system_settings (
+  id TEXT PRIMARY KEY,
+  data JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 14. ROW LEVEL SECURITY (RLS) POLICIES FOR ALL TABLES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.classes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subjects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendance ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.daily_monitoring ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.complaints ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.examinations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.student_marks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.parent_meetings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.health_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.uniform_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.teacher_observations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.system_settings ENABLE ROW LEVEL SECURITY;
 
--- Allow full portal read & write for authorized school operations:
+DROP POLICY IF EXISTS "Portal access profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Portal access classes" ON public.classes;
+DROP POLICY IF EXISTS "Portal access subjects" ON public.subjects;
+DROP POLICY IF EXISTS "Portal access students" ON public.students;
+DROP POLICY IF EXISTS "Portal access attendance" ON public.attendance;
+DROP POLICY IF EXISTS "Portal access daily_monitoring" ON public.daily_monitoring;
+DROP POLICY IF EXISTS "Portal access complaints" ON public.complaints;
+DROP POLICY IF EXISTS "Portal access examinations" ON public.examinations;
+DROP POLICY IF EXISTS "Portal access student_marks" ON public.student_marks;
+DROP POLICY IF EXISTS "Portal access parent_meetings" ON public.parent_meetings;
+DROP POLICY IF EXISTS "Portal access health_records" ON public.health_records;
+DROP POLICY IF EXISTS "Portal access uniform_records" ON public.uniform_records;
+DROP POLICY IF EXISTS "Portal access teacher_observations" ON public.teacher_observations;
+DROP POLICY IF EXISTS "Portal access system_settings" ON public.system_settings;
+
 CREATE POLICY "Portal access profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access classes" ON public.classes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access subjects" ON public.subjects FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Portal access students" ON public.students FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Portal access attendance" ON public.attendance FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Portal access daily_monitoring" ON public.daily_monitoring FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Portal access complaints" ON public.complaints FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access examinations" ON public.examinations FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Portal access student_marks" ON public.student_marks FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Portal access parent_meetings" ON public.parent_meetings FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access health_records" ON public.health_records FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access uniform_records" ON public.uniform_records FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access teacher_observations" ON public.teacher_observations FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Portal access system_settings" ON public.system_settings FOR ALL USING (true) WITH CHECK (true);
 
--- 14. AUTOMATIC LOW MARKS & CONSECUTIVE ABSENCE ALERT VIEWS
+-- 15. ENABLE REALTIME LIVE BROADCAST ACROSS ALL OPEN DEVICES
+DO $$
+DECLARE
+  tbl TEXT;
+  tbls TEXT[] := ARRAY['profiles','classes','subjects','students','attendance','daily_monitoring','complaints','examinations','student_marks','parent_meetings','health_records','uniform_records','teacher_observations','system_settings'];
+BEGIN
+  FOREACH tbl IN ARRAY tbls LOOP
+    BEGIN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE public.%I', tbl);
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+  END LOOP;
+END $$;
+
+-- 16. AUTOMATIC LOW MARKS ALERT VIEW
 CREATE OR REPLACE VIEW public.students_requiring_attention AS
 SELECT
   s.id AS student_id,

@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSync } from '../../hooks/useCloudSync';
 import {
   StudentComplaint,
   ComplaintCategory,
@@ -30,6 +31,11 @@ export const DisciplineManager: React.FC<{ onSelectStudent: (id: string) => void
     setAllStudents(StorageService.getStudents());
     setComplaints(StorageService.getComplaints());
   }, []);
+
+  useCloudSync(() => {
+    setAllStudents(StorageService.getStudents());
+    setComplaints(StorageService.getComplaints());
+  });
 
   // Filters & State
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');

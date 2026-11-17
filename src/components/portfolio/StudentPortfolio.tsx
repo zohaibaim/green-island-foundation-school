@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSyncTick } from '../../hooks/useCloudSync';
 import {
   Student,
   StudentAlert,
@@ -56,6 +57,7 @@ export const StudentPortfolio: React.FC<StudentPortfolioProps> = ({
   onSelectStudent,
 }) => {
   const { canEditStudentDetails, currentUser } = useAuth();
+  const syncTick = useCloudSyncTick();
   const [activeTab, setActiveTab] = useState<number>(1);
   const [isEditingProfile, setIsEditingProfile] = useState<boolean>(false);
 
@@ -63,64 +65,64 @@ export const StudentPortfolio: React.FC<StudentPortfolioProps> = ({
   const student = allStudents.find((s) => s.id === studentId) || allStudents[0];
 
   // Load all records for this student
-  const studentAlerts = useMemo(() => StorageService.getStudentAlerts(student?.id || ''), [student?.id]);
-  const overallStatus = useMemo(() => StorageService.getStudentStatus(student?.id || ''), [student?.id]);
+  const studentAlerts = useMemo(() => StorageService.getStudentAlerts(student?.id || ''), [student?.id, syncTick]);
+  const overallStatus = useMemo(() => StorageService.getStudentStatus(student?.id || ''), [student?.id, syncTick]);
 
   const marks = useMemo(() => {
     return StorageService.getMarks().filter((m) => m.studentId === student?.id);
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const attendance = useMemo(() => {
     return StorageService.getAttendance()
       .filter((a) => a.studentId === student?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const monitoring = useMemo(() => {
     return StorageService.getMonitoring()
       .filter((m) => m.studentId === student?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const complaints = useMemo(() => {
     return StorageService.getComplaints()
       .filter((c) => c.studentId === student?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const healthRecords = useMemo(() => {
     return StorageService.getHealthRecords()
       .filter((h) => h.studentId === student?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const uniformRecords = useMemo(() => {
     return StorageService.getUniformRecords()
       .filter((u) => u.studentId === student?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const observations = useMemo(() => {
     return StorageService.getObservations()
       .filter((o) => o.studentId === student?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const activities = useMemo(() => {
     return StorageService.getActivities()
       .filter((a) => a.studentId === student?.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const parentMeetings = useMemo(() => {
     return StorageService.getParentMeetings()
       .filter((p) => p.studentId === student?.id)
       .sort((a, b) => new Date(b.meetingDate).getTime() - new Date(a.meetingDate).getTime());
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   const docs = useMemo(() => {
     return StorageService.getDocs().filter((d) => d.studentId === student?.id);
-  }, [student?.id]);
+  }, [student?.id, syncTick]);
 
   // Next / Previous student
   const currentIndex = allStudents.findIndex((s) => s.id === student?.id);

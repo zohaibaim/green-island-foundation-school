@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSync } from '../../hooks/useCloudSync';
 import { HygieneStatus, Student } from '../../types';
 import { HeartPulse, CheckCircle2, Save, Check, Lock } from 'lucide-react';
 
@@ -38,10 +39,19 @@ export const HygieneUniformManager: React.FC<{ onSelectStudent: (id: string) => 
   const { currentUser, canMarkAttendance } = useAuth();
   const [students, setStudents] = useState<Student[]>(() => StorageService.getStudents());
   const classes = StorageService.getClasses();
+  const [cloudHygTick, setCloudHygTick] = useState(0);
+  const isDirtyRef = React.useRef(false);
 
   useEffect(() => {
     setStudents(StorageService.getStudents());
   }, []);
+
+  useCloudSync(() => {
+    setStudents(StorageService.getStudents());
+    if (!isDirtyRef.current) {
+      setCloudHygTick((t) => t + 1);
+    }
+  });
 
   const initialToken = currentUser?.inChargeClass || currentUser?.assignedClasses?.[0] || '';
 
@@ -139,7 +149,8 @@ export const HygieneUniformManager: React.FC<{ onSelectStudent: (id: string) => 
 
     setHygieneForm(initialHygiene);
     setUniformForm(initialUniform);
-  }, [selectedClassId, selectedSectionId, selectedDate, targetStudentsKey]);
+    isDirtyRef.current = false;
+  }, [selectedClassId, selectedSectionId, selectedDate, targetStudentsKey, cloudHygTick]);
 
   const updateHygieneField = (
     studentId: string,
@@ -147,6 +158,7 @@ export const HygieneUniformManager: React.FC<{ onSelectStudent: (id: string) => 
     val: HygieneStatus
   ) => {
     if (!isEditable) return;
+    isDirtyRef.current = true;
     setHygieneForm((prev) => ({
       ...prev,
       [studentId]: { ...(prev[studentId] || DEFAULT_HYGIENE), [field]: val },
@@ -159,6 +171,7 @@ export const HygieneUniformManager: React.FC<{ onSelectStudent: (id: string) => 
     val: HygieneStatus
   ) => {
     if (!isEditable) return;
+    isDirtyRef.current = true;
     setUniformForm((prev) => ({
       ...prev,
       [studentId]: { ...(prev[studentId] || DEFAULT_UNIFORM), [field]: val },
@@ -168,6 +181,7 @@ export const HygieneUniformManager: React.FC<{ onSelectStudent: (id: string) => 
   // Quick Action: Apply status to all students
   const handleBulkSetStatus = (statusVal: HygieneStatus) => {
     if (!isEditable) return;
+    isDirtyRef.current = true;
     if (activeSubTab === 'hygiene') {
       setHygieneForm((prev) => {
         const updated: Record<string, HygieneEntry> = {};
@@ -235,6 +249,7 @@ export const HygieneUniformManager: React.FC<{ onSelectStudent: (id: string) => 
       });
       setSaveMsg(`✓ School Uniform & Grooming inspection recorded successfully for ${targetStudents.length} students on ${selectedDate}!`);
     }
+    isDirtyRef.current = false;
     setTimeout(() => setSaveMsg(''), 4500);
   };
 
@@ -549,6 +564,7 @@ export const HygieneUniformManager: React.FC<{ onSelectStudent: (id: string) => 
                           value={activeSubTab === 'hygiene' ? hData.remarks : uData.remarks}
                           onChange={(e) => {
                             const val = e.target.value;
+                            isDirtyRef.current = true;
                             if (activeSubTab === 'hygiene') {
                               setHygieneForm((prev) => ({
                                 ...prev,

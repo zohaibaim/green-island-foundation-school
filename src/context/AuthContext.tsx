@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole, Student } from '../types';
 import { StorageService } from '../db/storage';
-import { getSupabaseClient, fetchAllProfilesFromSupabase } from '../db/supabaseClient';
+import {
+  getSupabaseClient,
+  startCloudRealtimeSync,
+  CLOUD_SYNC_EVENT,
+  PORTAL_STORAGE_KEYS,
+} from '../db/supabaseClient';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -43,12 +48,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const users = StorageService.getUsers();
     setAllUsers(users);
     const savedUserId = localStorage.getItem('gifs_active_user_id');
-    if (savedUserId) {
-      const matched = users.find((u) => u.id === savedUserId);
-      if (matched && matched.isActive !== false) {
+    const savedEmail = localStorage.getItem('gifs_active_user_email');
+    if (savedUserId || savedEmail) {
+      const matched = users.find(
+        (u) =>
+          (savedUserId && u.id === savedUserId) ||
+          (savedEmail && u.email?.toLowerCase().trim() === savedEmail.toLowerCase().trim())
+      );
+      if (matched && matched.isActive !== false && matched.isApproved !== false) {
         setCurrentUser(matched);
+        if (matched.id !== savedUserId) {
+          localStorage.setItem('gifs_active_user_id', matched.id);
+        }
       } else {
         localStorage.removeItem('gifs_active_user_id');
+        localStorage.removeItem('gifs_active_user_email');
         setCurrentUser(null);
       }
     } else {
@@ -59,47 +73,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     refreshUsers();
 
-    // Async sync with Supabase cloud profiles
-    const syncFromCloud = async () => {
-      try {
-        const cloudProfiles = await fetchAllProfilesFromSupabase();
-        if (cloudProfiles && cloudProfiles.length > 0) {
-          const cloudEmails = new Set(cloudProfiles.map((cp) => cp.email.toLowerCase().trim()));
-          const localUsers = StorageService.getUsers();
-
-          // Cloud profiles are authoritative source of truth
-          const updated: User[] = [...cloudProfiles];
-
-          // Retain primary admin if not in cloud list
-          localUsers.forEach((lu) => {
-            const clean = lu.email.toLowerCase().trim();
-            if (!cloudEmails.has(clean) && clean === 'zohaib.aim@gmail.com') {
-              updated.push(lu);
-            }
-          });
-
-          StorageService.saveUsers(updated);
-          setAllUsers(updated);
-
-          const activeId = localStorage.getItem('gifs_active_user_id');
-          if (activeId) {
-            const matchedActive = updated.find(
-              (u) => u.id === activeId || u.email.toLowerCase().trim() === activeId.toLowerCase().trim()
-            );
-            if (matchedActive && matchedActive.isActive !== false) {
-              setCurrentUser(matchedActive);
-            } else {
-              localStorage.removeItem('gifs_active_user_id');
-              setCurrentUser(null);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Initial cloud sync warning:', err);
+    // Listen for live profile updates pushed from cloud sync
+    const handleCloudSync = (event: Event) => {
+      const custom = event as CustomEvent<{ changedKeys?: string[] }>;
+      const keys = custom?.detail?.changedKeys || [];
+      if (keys.length === 0 || keys.includes(PORTAL_STORAGE_KEYS.USERS)) {
+        refreshUsers();
       }
     };
+    window.addEventListener(CLOUD_SYNC_EVENT, handleCloudSync);
 
-    syncFromCloud();
+    // Start live two-way Supabase Realtime + background polling engine across all tables
+    const stopRealtimeSync = startCloudRealtimeSync();
+
+    return () => {
+      window.removeEventListener(CLOUD_SYNC_EVENT, handleCloudSync);
+      stopRealtimeSync();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
@@ -108,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (res.success && res.user) {
       setCurrentUser(res.user);
       localStorage.setItem('gifs_active_user_id', res.user.id);
+      localStorage.setItem('gifs_active_user_email', res.user.email.toLowerCase().trim());
       setIsLoginModalOpen(false);
       return { success: true };
     }
@@ -182,6 +173,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           setCurrentUser(cloudUser);
           localStorage.setItem('gifs_active_user_id', cloudUser.id);
+          localStorage.setItem('gifs_active_user_email', cloudUser.email.toLowerCase().trim());
           setIsLoginModalOpen(false);
           return { success: true };
         }
@@ -195,6 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('gifs_active_user_id');
+    localStorage.removeItem('gifs_active_user_email');
     setCurrentUser(null);
   };
 
@@ -216,6 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (matched && matched.isActive !== false) {
       setCurrentUser(matched);
       localStorage.setItem('gifs_active_user_id', matched.id);
+      localStorage.setItem('gifs_active_user_email', matched.email.toLowerCase().trim());
     }
   };
 

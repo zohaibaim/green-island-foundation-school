@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSync } from '../../hooks/useCloudSync';
 import { Examination, ExaminationCategory, StudentMarkRecord, Student } from '../../types';
 import { OFFICIAL_EXAM_TERMS } from '../../db/initialData';
 import {
@@ -41,12 +42,23 @@ export const ExaminationsManager: React.FC<{ onSelectStudent: (id: string) => vo
   const [allStudents, setAllStudents] = useState<Student[]>(() => StorageService.getStudents());
   const [allExams, setAllExams] = useState<Examination[]>(() => StorageService.getExaminations());
   const [allMarks, setAllMarks] = useState<StudentMarkRecord[]>(() => StorageService.getMarks());
+  const [cloudExamTick, setCloudExamTick] = useState(0);
+  const isDirtyRef = React.useRef(false);
 
   useEffect(() => {
     setAllStudents(StorageService.getStudents());
     setAllExams(StorageService.getExaminations());
     setAllMarks(StorageService.getMarks());
   }, []);
+
+  useCloudSync(() => {
+    setAllStudents(StorageService.getStudents());
+    setAllExams(StorageService.getExaminations());
+    setAllMarks(StorageService.getMarks());
+    if (!isDirtyRef.current) {
+      setCloudExamTick((t) => t + 1);
+    }
+  });
 
   const parseClassToken = (token: string): { classId: string; sectionId: string } | null => {
     const trimmed = token.trim();
@@ -263,7 +275,8 @@ export const ExaminationsManager: React.FC<{ onSelectStudent: (id: string) => vo
     });
 
     setMarksMap(newMap);
-  }, [currentExam?.id, selectedClassId, selectedSectionId, selectedSubject, targetStudentsKey]);
+    isDirtyRef.current = false;
+  }, [currentExam?.id, selectedClassId, selectedSectionId, selectedSubject, targetStudentsKey, cloudExamTick]);
 
   const calculateGrade = (pct: number | null, customPassPct = passingPct): { grade: string; color: string; isLow: boolean } => {
     if (pct === null || isNaN(pct)) return { grade: 'N/A', color: 'bg-slate-100 text-slate-600', isLow: false };
@@ -320,6 +333,7 @@ export const ExaminationsManager: React.FC<{ onSelectStudent: (id: string) => vo
     }
 
     StorageService.saveBulkMarks(recordsToSave);
+    isDirtyRef.current = false;
     setAllMarks(StorageService.getMarks());
     setSaveSuccessMsg(
       `✓ Marks for ${selectedSubject} (${currentExam.name} • ${selectedClass?.name} - Sec ${selectedSectionId}) saved successfully!`
@@ -980,6 +994,7 @@ export const ExaminationsManager: React.FC<{ onSelectStudent: (id: string) => vo
                             value={entry.obtained}
                             onChange={(e) => {
                               const val = e.target.value;
+                              isDirtyRef.current = true;
                               setMarksMap((prev) => ({
                                 ...prev,
                                 [std.id]: { ...(prev[std.id] || { obtained: '', remarks: '' }), obtained: val },
@@ -1027,6 +1042,7 @@ export const ExaminationsManager: React.FC<{ onSelectStudent: (id: string) => vo
                             value={entry.remarks}
                             onChange={(e) => {
                               const val = e.target.value;
+                              isDirtyRef.current = true;
                               setMarksMap((prev) => ({
                                 ...prev,
                                 [std.id]: { ...(prev[std.id] || { obtained: '', remarks: '' }), remarks: val },

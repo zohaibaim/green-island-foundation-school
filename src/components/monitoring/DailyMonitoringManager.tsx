@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { StorageService } from '../../db/storage';
 import { useAuth } from '../../context/AuthContext';
+import { useCloudSync } from '../../hooks/useCloudSync';
 import { DailySubjectMonitoring, TriState, Student } from '../../types';
 import {
   BookOpen,
@@ -39,11 +40,21 @@ export const DailyMonitoringManager: React.FC<{ onSelectStudent: (id: string) =>
   const [monitoringRecords, setMonitoringRecords] = useState<DailySubjectMonitoring[]>(() =>
     StorageService.getMonitoring()
   );
+  const [cloudMonTick, setCloudMonTick] = useState(0);
+  const isDirtyRef = React.useRef(false);
 
   useEffect(() => {
     setAllStudents(StorageService.getStudents());
     setMonitoringRecords(StorageService.getMonitoring());
   }, []);
+
+  useCloudSync(() => {
+    setAllStudents(StorageService.getStudents());
+    setMonitoringRecords(StorageService.getMonitoring());
+    if (!isDirtyRef.current) {
+      setCloudMonTick((t) => t + 1);
+    }
+  });
 
   const parseClassToken = (token: string): { classId: string; sectionId: string } | null => {
     const trimmed = token.trim();
@@ -205,7 +216,8 @@ export const DailyMonitoringManager: React.FC<{ onSelectStudent: (id: string) =>
     });
 
     setFormState(initial);
-  }, [selectedClassId, selectedSectionId, selectedSubject, selectedDate, classStudentsKey]);
+    isDirtyRef.current = false;
+  }, [selectedClassId, selectedSectionId, selectedSubject, selectedDate, classStudentsKey, cloudMonTick]);
 
   const updateStudentField = (
     studentId: string,
@@ -213,6 +225,7 @@ export const DailyMonitoringManager: React.FC<{ onSelectStudent: (id: string) =>
     val: TriState
   ) => {
     if (!isEditable) return;
+    isDirtyRef.current = true;
     setFormState((prev) => {
       const current = prev[studentId] || { ...DEFAULT_ENTRY };
       return {
@@ -227,6 +240,7 @@ export const DailyMonitoringManager: React.FC<{ onSelectStudent: (id: string) =>
 
   const handleBulkSetAll = (val: TriState) => {
     if (!isEditable) return;
+    isDirtyRef.current = true;
     setFormState((prev) => {
       const updated: Record<string, MonitoringEntry> = {};
       classStudents.forEach((std) => {
@@ -268,6 +282,7 @@ export const DailyMonitoringManager: React.FC<{ onSelectStudent: (id: string) =>
       });
     });
 
+    isDirtyRef.current = false;
     setMonitoringRecords(StorageService.getMonitoring());
     setSaveSuccessMsg(
       `✓ Daily Books & Homework log saved for ${selectedSubject} (${selectedClass?.name || ''} - Sec ${selectedSectionId}) on ${selectedDate}!`
@@ -653,6 +668,7 @@ export const DailyMonitoringManager: React.FC<{ onSelectStudent: (id: string) =>
                           value={state.remarks}
                           onChange={(e) => {
                             const val = e.target.value;
+                            isDirtyRef.current = true;
                             setFormState((prev) => ({
                               ...prev,
                               [std.id]: { ...(prev[std.id] || DEFAULT_ENTRY), remarks: val },

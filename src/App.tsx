@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { StorageService } from './db/storage';
+import { pullAllFromSupabaseAndSyncUI } from './db/supabaseClient';
+import { useCloudSync } from './hooks/useCloudSync';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { MainDashboard } from './components/dashboard/MainDashboard';
@@ -60,6 +62,10 @@ function AppContent() {
     }
   }, [isAuthenticated, currentUser, currentRole, activeTab]);
 
+  useCloudSync(() => {
+    setDataVersion((v) => v + 1);
+  });
+
   // Strict Security Gate: If user is not authenticated, DO NOT show the dashboard or any data!
   // Immediately render the dedicated full-screen Login & Staff Registration portal.
   if (!isAuthenticated || !currentUser) {
@@ -74,7 +80,11 @@ function AppContent() {
   };
 
   const handleRefreshData = () => {
-    setDataVersion((v) => v + 1);
+    pullAllFromSupabaseAndSyncUI()
+      .catch(() => {})
+      .finally(() => {
+        setDataVersion((v) => v + 1);
+      });
   };
 
   const handleTabChange = (tab: string) => {
